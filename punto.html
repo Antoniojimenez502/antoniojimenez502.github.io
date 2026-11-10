@@ -1,0 +1,2957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f6f7f4">
+    <meta name="description" content="Administra productos, inventario, compras y ventas de Tienda Jiménez.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Tienda Jiménez">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <title>Tienda Jiménez | Inventario</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #202820;
+            --muted: #788078;
+            --line: #e9ece7;
+            --paper: #fff;
+            --canvas: #f6f7f4;
+            --green: #34664a;
+            --green-dark: #284f3a;
+            --green-soft: #eaf2eb;
+            --orange: #b66b31;
+            --orange-soft: #fbf0e5;
+            --red: #b94d48;
+            --red-soft: #faecea;
+            --shadow: 0 12px 32px rgb(34 49 37 / 8%);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--ink);
+            background: var(--canvas);
+            font-size: 14px;
+        }
+
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        button:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 3px solid rgb(52 102 74 / 28%);
+            outline-offset: 2px;
+        }
+
+        .app { display: flex; min-height: 100vh; }
+        body.local-access-locked .app { visibility: hidden; }
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 3;
+            display: flex;
+            width: 246px;
+            flex-direction: column;
+            padding: 27px 17px 18px;
+            overflow-y: auto;
+            background: var(--paper);
+            border-right: 1px solid var(--line);
+        }
+
+        .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px; }
+        .brand-mark {
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            color: white;
+            background: var(--green);
+            border-radius: 12px;
+            font-size: 19px;
+            font-weight: 700;
+        }
+        .brand-name { font-size: 19px; font-weight: 750; letter-spacing: -.7px; }
+        .brand-caption { margin-top: 2px; color: var(--muted); font-size: 11px; }
+        .side-label {
+            margin: 38px 11px 11px;
+            color: #9aa198;
+            font-size: 10px;
+            font-weight: 750;
+            letter-spacing: 1.15px;
+            text-transform: uppercase;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 43px;
+            padding: 0 12px;
+            color: #69716a;
+            border-radius: 9px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 550;
+        }
+        .nav-link.active { color: var(--green-dark); background: var(--green-soft); font-weight: 700; }
+        .nav-icon { width: 19px; text-align: center; font-size: 16px; }
+        .nav-count {
+            min-width: 23px;
+            margin-left: auto;
+            padding: 3px 6px;
+            color: #8c938b;
+            background: #f1f3f0;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 10px;
+        }
+        .store-card {
+            margin-top: auto;
+            padding: 14px;
+            background: #f8f9f7;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+        .store-card-label { margin-bottom: 8px; color: var(--muted); font-size: 11px; }
+        .store-type-label { margin-top: 8px; color: var(--green-dark); font-size: 10px; font-weight: 650; }
+        .store-select {
+            width: 100%;
+            padding: 8px 27px 8px 9px;
+            color: var(--ink);
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            font-size: 12px;
+        }
+        .add-store-button { width: 100%; min-height: 34px; margin-top: 8px; padding: 0 9px; color: var(--green-dark); background: white; border: 1px solid #dce9dd; border-radius: 7px; font-size: 11px; font-weight: 700; }
+        .add-store-button:hover { background: var(--green-soft); }
+        .edit-store-type-button { width: 100%; min-height: 34px; margin-top: 7px; padding: 0 9px; color: #69716a; background: transparent; border: 1px solid var(--line); border-radius: 7px; font-size: 10px; font-weight: 650; }
+        .edit-store-type-button:hover { color: var(--green-dark); background: var(--green-soft); }
+        .store-admin-label { margin: 14px 0 6px; color: #899188; font-size: 9px; font-weight: 750; letter-spacing: .8px; text-transform: uppercase; }
+        .rename-store-button { width: 100%; min-height: 32px; margin-top: 7px; padding: 0 9px; color: #69716a; background: transparent; border: 1px solid var(--line); border-radius: 7px; font-size: 10px; font-weight: 650; }
+        .rename-store-button:hover { color: var(--green-dark); background: var(--green-soft); }
+        .account-session { padding: 0 23px 14px; }
+        .account-list { display: grid; max-height: 250px; gap: 8px; overflow-y: auto; padding: 0 23px 18px; }
+        .account-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 12px; background: #fafbf9; border: 1px solid var(--line); border-radius: 8px; }
+        .account-name { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+        .account-role { margin-top: 4px; color: var(--muted); font-size: 10px; }
+        .account-delete { min-height: 36px; flex: 0 0 auto; padding: 0 10px; color: var(--red); background: var(--red-soft); border: 1px solid #f0d7d4; border-radius: 7px; font-size: 10px; font-weight: 700; }
+        .account-delete:disabled { color: var(--muted); background: #f1f3f0; border-color: var(--line); cursor: not-allowed; }
+        .account-permission-note { padding: 0 23px 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+        .account-store-actions { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; padding: 0 23px 16px; }
+        .account-store-actions .field { min-width: 180px; flex: 1 1 180px; }
+        .account-store-actions .secondary-button { min-height: 38px; }
+        .account-store-fields { padding: 0 23px 4px; }
+        .user-card {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+            margin-top: 15px;
+            padding: 12px 7px 0;
+            border-top: 1px solid var(--line);
+        }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        .admin-actions { width: 100%; }
+        .avatar {
+            display: grid;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            color: #775a42;
+            background: #f2e5d7;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 750;
+        }
+        .user-name { font-size: 12px; font-weight: 700; }
+        .user-role { margin-top: 3px; color: var(--muted); font-size: 10px; }
+
+        main { width: calc(100% - 246px); margin-left: 246px; }
+        .topbar {
+            display: flex;
+            height: 69px;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 15px;
+            padding: 0 5.2%;
+            background: rgb(255 255 255 / 84%);
+            border-bottom: 1px solid var(--line);
+        }
+        .topbar-note { color: var(--muted); font-size: 12px; }
+        .today { color: var(--ink); font-weight: 650; }
+        .install-button { min-height: 36px; padding: 0 12px; color: var(--green-dark); background: var(--green-soft); border: 1px solid #dce9dd; border-radius: 7px; font-size: 11px; font-weight: 700; }
+        .install-button:hover { background: #deebdf; }
+        .topbar-avatar {
+            display: grid;
+            width: 33px;
+            height: 33px;
+            place-items: center;
+            color: var(--green-dark);
+            background: var(--green-soft);
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 750;
+        }
+        .content { width: min(1190px, 100%); margin: 0 auto; padding: 37px 5.2% 55px; }
+        .eyebrow {
+            margin-bottom: 8px;
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.35px;
+            text-transform: uppercase;
+        }
+        .page-heading {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        h1 { margin: 0; font-size: clamp(25px, 3vw, 31px); letter-spacing: -1.2px; }
+        .subtitle { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+        .primary-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 41px;
+            padding: 0 15px;
+            color: white;
+            background: var(--green);
+            border: 0;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            transition: background .15s, transform .15s;
+        }
+        .primary-button:hover { background: var(--green-dark); transform: translateY(-1px); }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            min-height: 111px;
+            padding: 17px 18px;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 11px;
+        }
+        .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .stat-label { color: var(--muted); font-size: 11px; font-weight: 600; }
+        .stat-icon {
+            display: grid;
+            width: 29px;
+            height: 29px;
+            place-items: center;
+            color: var(--green);
+            background: var(--green-soft);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .stat-card.warning .stat-icon { color: var(--orange); background: var(--orange-soft); }
+        .stat-card.danger .stat-icon { color: var(--red); background: var(--red-soft); }
+        .stat-value { margin-top: 9px; font-size: 24px; font-weight: 750; letter-spacing: -.8px; }
+        .stat-hint { margin-left: 6px; color: #969d95; font-size: 10px; font-weight: 500; letter-spacing: 0; }
+        .inventory-panel {
+            overflow: hidden;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+        .panel-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 19px 21px 16px;
+        }
+        .panel-heading h2 { margin: 0; font-size: 15px; letter-spacing: -.25px; }
+        .product-count { margin-left: 7px; color: #929991; font-size: 11px; font-weight: 500; }
+        .panel-subtitle { margin-top: 5px; color: var(--muted); font-size: 11px; }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            padding: 0 21px 17px;
+        }
+        .search-wrap { position: relative; flex: 1 1 215px; }
+        .search-icon { position: absolute; top: 10px; left: 11px; color: #929991; font-size: 14px; }
+        .search-input, .filter-select {
+            height: 36px;
+            color: var(--ink);
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            font-size: 11px;
+        }
+        .search-input { width: 100%; padding: 0 10px 0 32px; }
+        .filter-select { min-width: 132px; padding: 0 27px 0 10px; }
+        .table-scroll { overflow-x: auto; border-top: 1px solid var(--line); }
+        table { width: 100%; min-width: 940px; border-collapse: collapse; text-align: left; }
+        thead { background: #fafbf9; }
+        th {
+            height: 39px;
+            padding: 0 17px;
+            color: #899188;
+            font-size: 9px;
+            font-weight: 750;
+            letter-spacing: .55px;
+            text-transform: uppercase;
+        }
+        td { height: 65px; padding: 8px 17px; border-top: 1px solid #f0f2ee; font-size: 11px; }
+        tbody tr:hover { background: #fcfdfb; }
+        th:last-child, td:last-child { position: sticky; right: 0; z-index: 1; min-width: 116px; background: var(--paper); box-shadow: -8px 0 12px rgb(34 49 37 / 5%); }
+        thead th:last-child { z-index: 2; background: #fafbf9; }
+        tbody tr:hover td:last-child { background: #fcfdfb; }
+        .product-cell { display: flex; min-width: 210px; align-items: center; gap: 11px; }
+        .product-emoji {
+            display: grid;
+            width: 37px;
+            height: 37px;
+            flex: 0 0 37px;
+            place-items: center;
+            background: #f5f2eb;
+            border-radius: 9px;
+            font-size: 19px;
+        }
+        .product-name { font-size: 11px; font-weight: 700; }
+        .product-sku { margin-top: 4px; color: #929991; font-size: 9px; }
+        .category-pill {
+            display: inline-block;
+            padding: 5px 8px;
+            color: #687168;
+            background: #f2f4f1;
+            border-radius: 20px;
+            font-size: 9px;
+            white-space: nowrap;
+        }
+        .price { font-weight: 650; white-space: nowrap; }
+        .stock-cell { min-width: 110px; }
+        .stock-number { font-weight: 650; }
+        .stock-track { width: 70px; height: 4px; margin-top: 6px; overflow: hidden; background: #edf0eb; border-radius: 5px; }
+        .stock-fill { height: 100%; background: #7da184; border-radius: inherit; }
+        .stock-fill.low { background: #dda15e; }
+        .stock-fill.out { background: #cf7972; }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 8px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 650;
+            white-space: nowrap;
+        }
+        .status::before { width: 5px; height: 5px; background: currentColor; border-radius: 50%; content: ""; }
+        .status.ok { color: #4d7957; background: #edf5ed; }
+        .status.low { color: #a56a2f; background: #fbf1e4; }
+        .status.out { color: #ae4c47; background: #faecea; }
+        .actions { display: flex; align-items: center; gap: 5px; }
+        .icon-button {
+            display: grid;
+            width: 28px;
+            height: 28px;
+            place-items: center;
+            color: #7d857c;
+            background: transparent;
+            border: 0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .icon-button:hover { color: var(--green); background: var(--green-soft); }
+        .icon-button.delete:hover { color: var(--red); background: var(--red-soft); }
+        .icon-button.delete { width: auto; padding: 0 8px; color: var(--red); font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .empty-state { padding: 42px 15px; color: var(--muted); text-align: center; }
+        .empty-state strong { display: block; margin-bottom: 5px; color: var(--ink); font-size: 13px; }
+        .panel-footer {
+            display: flex;
+            min-height: 48px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0 20px;
+            color: var(--muted);
+            border-top: 1px solid var(--line);
+            font-size: 10px;
+        }
+        .footer-good { display: flex; align-items: center; gap: 6px; color: #66836a; }
+        .footer-good::before { width: 6px; height: 6px; background: #7ca47d; border-radius: 50%; content: ""; }
+        .secondary-toolbar-button {
+            min-height: 36px;
+            padding: 0 12px;
+            color: var(--green-dark);
+            background: var(--green-soft);
+            border: 1px solid #dce9dd;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .secondary-toolbar-button:hover { background: #deebdf; }
+        .danger-toolbar-button { color: #ae4c47; background: var(--red-soft); border-color: #f0d7d4; }
+        .danger-toolbar-button:hover { background: #f7e1df; }
+        .price-stack { display: grid; gap: 3px; white-space: nowrap; }
+        .price-stack span:last-child { color: var(--muted); font-size: 9px; }
+        .stock-meta, .expiry-meta { margin-top: 4px; color: var(--muted); font-size: 9px; }
+        .status.expiring { color: #a56a2f; background: #fbf1e4; }
+        .status.expired { color: #ae4c47; background: #faecea; }
+        .movement-panel { margin-top: 20px; }
+        .movement-type { font-weight: 700; }
+        .movement-type.entry { color: var(--green); }
+        .movement-type.exit { color: var(--red); }
+        .secondary-button:disabled { opacity: .55; cursor: not-allowed; }
+        .heading-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+        .heading-actions #register-sale { margin-left: 16px; }
+        .summary-section { margin: 0 0 24px; scroll-margin-top: 20px; }
+        .section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .section-title h2 { margin: 0; font-size: 15px; letter-spacing: -.3px; }
+        .section-title p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+        .summary-period { padding: 6px 9px; color: var(--green-dark); background: var(--green-soft); border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .summary-grid { display: grid; grid-template-columns: minmax(230px, .75fr) minmax(0, 1.5fr); gap: 13px; }
+        .weekly-card, .category-card { min-height: 135px; padding: 18px; background: var(--paper); border: 1px solid var(--line); border-radius: 11px; }
+        .weekly-label, .weekly-foot { display: block; color: var(--muted); font-size: 11px; }
+        .weekly-card strong { display: block; margin: 13px 0 7px; color: var(--green-dark); font-size: 26px; letter-spacing: -.7px; }
+        .category-card-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; font-size: 12px; }
+        .category-card-title span { color: var(--muted); font-size: 10px; }
+        .category-sales { display: grid; gap: 11px; }
+        .category-row { display: grid; grid-template-columns: minmax(80px, .8fr) minmax(60px, 1.4fr) auto; align-items: center; gap: 10px; font-size: 10px; }
+        .category-row-name { overflow: hidden; color: #606960; text-overflow: ellipsis; white-space: nowrap; }
+        .category-bar { height: 7px; overflow: hidden; background: #edf0eb; border-radius: 10px; }
+        .category-bar-fill { height: 100%; background: #7da184; border-radius: inherit; }
+        .category-row-total { color: var(--ink); font-weight: 700; white-space: nowrap; }
+        .category-empty { padding: 13px 0; color: var(--muted); font-size: 11px; }
+        .invoice-link { padding: 5px 8px; color: var(--green-dark); background: var(--green-soft); border: 0; border-radius: 6px; font-size: 10px; font-weight: 700; }
+        .invoice-link:hover { background: #deebdf; }
+        .invoice-group + .invoice-group { margin-top: 16px; }
+        .invoice-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 21px; border-top: 1px solid var(--line); }
+        .invoice-group-heading h3 { margin: 0; font-size: 12px; }
+        .invoice-group-heading span { color: var(--muted); font-size: 10px; }
+        .invoice-paper { padding: 0 23px 20px; }
+        .invoice-paper h3 { margin: 0 0 12px; font-size: 14px; }
+        .invoice-paper p { margin: 7px 0; color: #606960; font-size: 11px; }
+        .invoice-total { margin-top: 13px !important; padding-top: 11px; color: var(--ink) !important; border-top: 1px solid var(--line); font-size: 14px !important; font-weight: 750; }
+        .store-name-button { padding: 6px 9px; color: var(--green-dark); background: var(--green-soft); border: 1px solid #dce9dd; border-radius: 7px; font-size: 10px; font-weight: 700; }
+        .install-help { padding: 0 23px 18px; color: #606960; font-size: 12px; line-height: 1.6; }
+        .install-help p { margin: 0 0 10px; }
+        .install-help strong { color: var(--ink); }
+
+        dialog {
+            width: min(450px, calc(100% - 28px));
+            padding: 0;
+            color: var(--ink);
+            background: white;
+            border: 0;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
+        #local-access-dialog { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; }
+        dialog::backdrop { background: rgb(25 36 28 / 36%); backdrop-filter: blur(2px); }
+        .dialog-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 22px 23px 16px; }
+        .dialog-header h2 { margin: 0; font-size: 18px; letter-spacing: -.45px; }
+        .dialog-header p { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+        .close-button { color: #7d857c; background: transparent; border: 0; font-size: 20px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; padding: 0 23px 20px; }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field[hidden] { display: none; }
+        .field.full { grid-column: 1 / -1; }
+        .field label { color: #606960; font-size: 10px; font-weight: 700; }
+        .field input, .field select {
+            width: 100%;
+            height: 38px;
+            padding: 0 10px;
+            color: var(--ink);
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            font-size: 11px;
+        }
+        .dialog-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 23px; background: #fafbf9; border-top: 1px solid var(--line); }
+        .secondary-button {
+            min-height: 36px;
+            padding: 0 13px;
+            color: #69716a;
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 650;
+        }
+        .dialog-footer .primary-button { min-height: 36px; font-size: 11px; }
+        @media print {
+            @page { size: 80mm auto; margin: 0; }
+            html, body { width: 80mm; min-width: 0; min-height: 0; margin: 0; background: white; }
+            body * { visibility: hidden !important; }
+            #invoice-dialog, #invoice-dialog * { visibility: visible !important; }
+            #invoice-dialog { position: absolute; inset: 0 auto auto 0; display: block; width: 74mm; max-width: none; max-height: none; margin: 0; padding: 0; overflow: visible; border-radius: 0; box-shadow: none; color: #000; }
+            #invoice-dialog .dialog-header, #invoice-dialog .dialog-footer, #invoice-dialog .close-button { display: none !important; }
+            #invoice-dialog .invoice-paper { padding: 4mm; color: #000; font: 10pt/1.35 Arial, sans-serif; overflow-wrap: anywhere; }
+            #invoice-dialog .invoice-paper h3 { margin: 0 0 4mm; padding-bottom: 3mm; border-bottom: 1px dashed #555; text-align: center; font-size: 14pt; }
+            #invoice-dialog .invoice-paper p { margin: 0; padding: 2mm 0; color: #000; border-bottom: 1px dotted #aaa; font-size: 9pt; }
+            #invoice-dialog .invoice-paper .invoice-total { margin-top: 3mm !important; padding-top: 3mm; border-top: 1px dashed #555; border-bottom: 0; font-size: 12pt !important; }
+        }
+        .toast {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 5;
+            padding: 12px 16px;
+            color: white;
+            background: #263d2e;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(8px);
+            transition: .2s ease;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 1000px) {
+            .sidebar { width: 215px; }
+            main { width: calc(100% - 215px); margin-left: 215px; }
+            .content { padding-right: 4%; padding-left: 4%; }
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 680px) {
+            body { min-width: 0; }
+            .sidebar { position: static; width: 100%; height: auto; padding: 13px 15px; border-right: 0; border-bottom: 1px solid var(--line); }
+            .app { display: block; }
+            .brand { padding: 0; }
+            .side-label { display: none; }
+            .sidebar nav {
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 20;
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 2px;
+                margin: 0;
+                padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+                overflow: visible;
+                background: var(--paper);
+                border-top: 1px solid var(--line);
+                box-shadow: 0 -5px 16px rgb(34 49 37 / 7%);
+            }
+            .nav-link { min-width: 0; min-height: 50px; flex-direction: column; justify-content: center; gap: 3px; padding: 4px 2px; font-size: 9px; line-height: 1.15; text-align: center; white-space: normal; }
+            .nav-icon { width: auto; font-size: 17px; line-height: 1; }
+            .nav-label { max-width: 100%; overflow-wrap: anywhere; }
+            .nav-count { display: none; }
+            .store-card { display: block; margin-top: 12px; padding: 10px 12px; }
+            .store-select, .edit-store-type-button { min-height: 44px; }
+            .user-card { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 10px; padding: 10px 0 0; }
+            .user-profile { gap: 7px; }
+            .avatar { width: 30px; height: 30px; flex: 0 0 30px; }
+            .user-name { font-size: 10px; }
+            .user-role { font-size: 9px; }
+            .admin-actions { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+            .store-admin-label { display: none; }
+            .rename-store-button { min-height: 44px; margin: 0; padding: 0 7px; font-size: 10px; }
+            main { width: 100%; margin: 0; }
+            .topbar { position: sticky; top: 0; z-index: 4; height: 54px; justify-content: space-between; gap: 8px; padding: 0 15px; }
+            .topbar-note { display: none; }
+            .today { margin-right: auto; font-size: 11px; }
+            .install-button { min-height: 44px; }
+            .content { padding: 22px 15px calc(88px + env(safe-area-inset-bottom)); }
+            #resumen, #inventario, #categorias, #movimientos, #facturas { scroll-margin-top: 64px; }
+            .page-heading { flex-direction: column; align-items: flex-start; gap: 13px; }
+            .heading-actions { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: stretch; gap: 8px; }
+            .heading-actions #register-sale { margin-left: 0; }
+            .heading-actions button { min-height: 48px; padding: 0 9px; font-size: 11px; line-height: 1.25; }
+            .subtitle { max-width: none; line-height: 1.5; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .stats { gap: 9px; margin-bottom: 16px; }
+            .stat-card { min-height: 99px; padding: 13px; }
+            .stat-value { font-size: 21px; }
+            .panel-heading { align-items: flex-start; padding: 16px 14px 13px; }
+            .toolbar { padding: 0 14px 13px; }
+            .search-wrap { flex-basis: 100%; }
+            .filter-select { min-width: 0; flex: 1 1 calc(50% - 5px); height: 44px; }
+            .toolbar .secondary-toolbar-button { min-height: 44px; flex: 1 1 100%; }
+            .search-input { height: 44px; font-size: 16px; }
+            .product-table { min-width: 0; }
+            .product-table thead { display: none; }
+            .product-table .product-row { display: block; padding: 7px 0; border-top: 1px solid var(--line); }
+            .product-table .product-row:hover { background: transparent; }
+            .product-table .product-row td,
+            .product-table .product-row td:last-child {
+                position: static;
+                display: grid;
+                width: auto;
+                min-width: 0;
+                min-height: 42px;
+                grid-template-columns: minmax(82px, 30%) minmax(0, 1fr);
+                align-items: center;
+                gap: 10px;
+                padding: 7px 13px;
+                border: 0;
+                background: transparent;
+                box-shadow: none;
+                text-align: left;
+            }
+            .product-table .product-row td::before { color: var(--muted); content: attr(data-label); font-size: 10px; font-weight: 650; }
+            .product-table .product-row .product-cell { min-width: 0; }
+            .product-table .product-row .product-cell > div { min-width: 0; }
+            .product-table .product-row .product-name { overflow-wrap: anywhere; }
+            .product-table .product-row .actions { flex-wrap: wrap; }
+            .product-table .product-row .icon-button { min-width: 40px; min-height: 40px; }
+            .product-table .product-row .icon-button.delete { min-height: 40px; }
+            .movement-panel .table-scroll { -webkit-overflow-scrolling: touch; }
+            .movement-panel table { min-width: 620px; }
+            #facturas table { min-width: 720px; }
+            .panel-heading .danger-toolbar-button { min-height: 42px; flex: 0 0 auto; }
+            .panel-footer { padding: 0 13px; font-size: 9px; }
+            th, td { padding-right: 12px; padding-left: 12px; }
+            .toast { right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); left: 12px; text-align: center; }
+        }
+        @media (max-width: 380px) {
+            .page-heading { flex-direction: column; gap: 13px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .stat-label { font-size: 10px; }
+            .panel-heading { flex-wrap: wrap; }
+            .panel-heading .danger-toolbar-button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" aria-label="Navegación principal">
+            <div class="brand">
+                <div class="brand-mark" aria-hidden="true">J</div>
+                <div>
+                    <div class="brand-name">tienda jimenez</div>
+                    <div class="brand-caption">Inventario de abarrotes</div>
+                </div>
+            </div>
+            <div class="side-label">Menú</div>
+            <nav aria-label="Secciones de inventario">
+                <a class="nav-link" href="#resumen"><span class="nav-icon" aria-hidden="true">◫</span><span class="nav-label">Resumen</span></a>
+                <a class="nav-link active" href="#inventario" aria-current="page"><span class="nav-icon" aria-hidden="true">▦</span><span class="nav-label">Productos</span><span class="nav-count" id="nav-count">0</span></a>
+                <a class="nav-link" href="#categorias" id="categories-link"><span class="nav-icon" aria-hidden="true">◈</span><span class="nav-label">Categorías</span></a>
+                <a class="nav-link" href="#movimientos" id="movements-link"><span class="nav-icon" aria-hidden="true">↗</span><span class="nav-label">Movimientos</span></a>
+                <a class="nav-link" href="#facturas"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Compras y ventas</span></a>
+            </nav>
+            <div class="store-card">
+                <div class="store-card-label">Tienda seleccionada</div>
+                <select class="store-select" id="store-select" aria-label="Seleccionar tienda">
+                    <option value="Casa Nativa">Tienda Jiménez</option>
+                </select>
+                <div class="store-type-label" id="selected-store-type"></div>
+                <button class="edit-store-type-button" id="edit-store-type" type="button">Cambiar tipo de tienda</button>
+            </div>
+            <div class="user-card">
+                <div class="user-profile">
+                    <div class="avatar" aria-hidden="true">AJ</div>
+                    <div><div class="user-name">Antonio jimenez</div><div class="user-role">Administradora</div></div>
+                </div>
+                <div class="admin-actions">
+                    <div class="store-admin-label">Administración</div>
+                    <button class="rename-store-button" id="edit-store-name" type="button">✎ Cambiar nombre de tienda</button>
+                    <button class="rename-store-button" id="manage-accounts" type="button">Administrar cuentas</button>
+                </div>
+            </div>
+        </aside>
+
+        <main>
+            <header class="topbar">
+                <span class="topbar-note">Vista general de inventario</span>
+                <span class="today" id="today"></span>
+                <button class="install-button" id="install-app" type="button">Instalar app</button>
+                <div class="topbar-avatar" aria-label="Perfil de Antonio Jiménez">AJ</div>
+            </header>
+            <div class="content" id="inventario">
+                <div class="eyebrow">Tu espacio de trabajo</div>
+                <div class="page-heading">
+                    <div>
+                        <h1>Inventario de tienda</h1>
+                        <p class="subtitle">Controla productos, compras, ventas y existencias en quetzales.</p>
+                    </div>
+                    <div class="heading-actions">
+                        <button class="secondary-toolbar-button" id="register-purchase" type="button">＋ Añadir producto</button>
+                        <button class="primary-button" id="register-sale" type="button">＋ Salida de ventas</button>
+                        <button class="secondary-toolbar-button" id="add-product" type="button">＋ Nuevo producto</button>
+                    </div>
+                </div>
+
+                <section class="stats" aria-label="Resumen del inventario">
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Productos registrados</span><span class="stat-icon" aria-hidden="true">▦</span></div>
+                        <div class="stat-value" id="total-products">0</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Unidades en tienda</span><span class="stat-icon" aria-hidden="true">▤</span></div>
+                        <div class="stat-value" id="total-units">0</div>
+                    </article>
+                    <article class="stat-card warning">
+                        <div class="stat-top"><span class="stat-label">Valor de compra</span><span class="stat-icon" aria-hidden="true">Q</span></div>
+                        <div class="stat-value" id="stock-value">Q0.00</div>
+                    </article>
+                    <article class="stat-card danger">
+                        <div class="stat-top"><span class="stat-label">Por reponer / caducados</span><span class="stat-icon" aria-hidden="true">!</span></div>
+                        <div class="stat-value" id="attention-count">0</div>
+                    </article>
+                </section>
+
+                <section class="summary-section" id="resumen" aria-labelledby="weekly-title">
+                    <div class="section-title">
+                        <div><h2 id="weekly-title">Resumen de ventas</h2><p>Actividad de los últimos 7 días</p></div>
+                        <span class="summary-period">Esta semana</span>
+                    </div>
+                    <div class="summary-grid">
+                        <article class="weekly-card">
+                            <span class="weekly-label">Ventas de la semana</span>
+                            <strong id="weekly-sales">Q0.00</strong>
+                            <span class="weekly-foot" id="weekly-count">0 ventas registradas</span>
+                        </article>
+                        <article class="category-card" id="categorias">
+                            <div class="category-card-title"><strong>Ventas por categoría</strong><span>Esta semana</span></div>
+                            <div id="category-sales" class="category-sales"></div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="inventory-panel" aria-labelledby="inventory-title">
+                    <div class="panel-heading">
+                        <div>
+                            <h2 id="inventory-title">Catálogo de mercancía <span class="product-count" id="visible-count"></span></h2>
+                            <div class="panel-subtitle">Busca por nombre y revisa niveles de reposición.</div>
+                        </div>
+                    </div>
+                    <div class="toolbar">
+                        <label class="search-wrap">
+                            <span class="search-icon" aria-hidden="true">⌕</span>
+                            <input class="search-input" id="search" type="search" placeholder="Buscar por nombre..." aria-label="Buscar productos">
+                        </label>
+                        <select class="filter-select" id="category-filter" aria-label="Filtrar por categoría">
+                            <option value="">Todas las categorías</option>
+                        </select>
+                        <select class="filter-select" id="stock-filter" aria-label="Filtrar por disponibilidad">
+                            <option value="">Cualquier stock</option>
+                            <option value="ok">Stock suficiente</option>
+                            <option value="low">Por reponer</option>
+                            <option value="out">Agotado</option>
+                            <option value="expired">Caducado</option>
+                            <option value="expiring">Por caducar</option>
+                        </select>
+                        <button class="secondary-toolbar-button" id="register-movement" type="button">＋ Entrada / salida</button>
+                        <button class="secondary-toolbar-button" id="register-exit" type="button">− Registrar salida</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Producto</th>
+                                    <th scope="col">Categoría</th>
+                                    <th scope="col">Precio de venta</th>
+                                    <th scope="col">Existencias / mínimo</th>
+                                    <th scope="col">Caducidad</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col"><span class="sr-only">Acciones</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-list"></tbody>
+                        </table>
+                    </div>
+                    <div class="panel-footer">
+                        <span id="footer-count">Mostrando 0 productos</span>
+                        <span class="footer-good">Inventario actualizado</span>
+                    </div>
+                </section>
+                <section class="inventory-panel movement-panel" id="movimientos" aria-labelledby="movement-title">
+                    <div class="panel-heading">
+                        <div>
+                            <h2 id="movement-title">Movimientos de inventario</h2>
+                            <div class="panel-subtitle">Entradas de proveedores y salidas registradas.</div>
+                        </div>
+                        <button class="secondary-toolbar-button danger-toolbar-button" id="clear-movements" type="button">Limpiar movimientos</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr><th scope="col">Fecha</th><th scope="col">Producto</th><th scope="col">Tipo</th><th scope="col">Cantidad</th><th scope="col">Existencia resultante</th></tr></thead>
+                            <tbody id="movement-list"></tbody>
+                        </table>
+                    </div>
+                    <div class="panel-footer"><span id="movement-count">Sin movimientos</span><span>Registro de esta sucursal</span></div>
+                </section>
+                <section class="inventory-panel movement-panel" id="facturas" aria-labelledby="invoice-title">
+                    <div class="panel-heading">
+                        <div><h2 id="invoice-title">Facturas de venta</h2><div class="panel-subtitle">Comprobantes de venta con fecha, hora, cliente y total.</div></div>
+                        <button class="secondary-toolbar-button danger-toolbar-button" id="clear-sales" type="button">Limpiar facturas</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr><th scope="col">Fecha y hora</th><th scope="col">Factura</th><th scope="col">Cliente</th><th scope="col">Producto</th><th scope="col">Total</th><th scope="col">Detalle</th></tr></thead>
+                            <tbody id="sale-transaction-list"></tbody>
+                        </table>
+                    </div>
+                    <div class="panel-footer"><span id="sale-invoice-count">Sin facturas</span><span>Registro de esta sucursal</span></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <dialog id="product-dialog" aria-labelledby="dialog-title">
+        <form id="product-form">
+            <div class="dialog-header">
+                <div>
+                    <h2 id="dialog-title">Agregar producto</h2>
+                    <p>Agrega los datos de venta, reposición y control del producto.</p>
+                </div>
+                <button class="close-button" id="close-dialog" type="button" aria-label="Cerrar">×</button>
+            </div>
+            <div class="form-grid">
+                <div class="field full">
+                    <label for="product-name-input">Nombre del producto</label>
+                    <input id="product-name-input" name="name" maxlength="70" required placeholder="Ej. Taza de cerámica">
+                </div>
+                <div class="field">
+                    <label for="product-category-input">Categoría</label>
+                    <input id="product-category-input" name="category" maxlength="32" required list="category-options" placeholder="Ej. Abarrotes">
+                    <datalist id="category-options"></datalist>
+                </div>
+                <div class="field">
+                    <label for="product-cost-input">Costo de compra (Q)</label>
+                    <input id="product-cost-input" name="cost" type="number" min="0" step="0.01" required placeholder="0.00">
+                </div>
+                <div class="field">
+                    <label for="product-price-input">Precio de venta (Q)</label>
+                    <input id="product-price-input" name="price" type="number" min="0" step="0.01" required placeholder="0.00">
+                </div>
+                <div class="field">
+                    <label for="product-stock-input">Existencias actuales</label>
+                    <input id="product-stock-input" name="stock" type="number" min="0" step="0.01" required placeholder="0">
+                </div>
+                <div class="field">
+                    <label for="product-min-stock-input">Mínimo para reponer</label>
+                    <input id="product-min-stock-input" name="minStock" type="number" min="0" step="0.01" required placeholder="5">
+                </div>
+                <div class="field">
+                    <label for="product-unit-input">Unidad de venta</label>
+                    <select id="product-unit-input" name="unit" required>
+                        <option value="pza">Pieza</option><option value="kg">Kilogramo</option><option value="g">Gramo</option><option value="L">Litro</option><option value="mL">Mililitro</option><option value="paq">Paquete</option><option value="caja">Caja</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="product-expiry-input">Fecha de caducidad (opcional)</label>
+                    <input id="product-expiry-input" name="expirationDate" type="date">
+                </div>
+                <div class="field full">
+                    <label for="product-supplier-input">Proveedor</label>
+                    <input id="product-supplier-input" name="supplier" maxlength="60" placeholder="Nombre del proveedor (opcional)">
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="secondary-button" id="cancel-dialog" type="button">Cancelar</button>
+                <button class="primary-button" type="submit">Guardar producto</button>
+            </div>
+        </form>
+    </dialog>
+    <dialog id="purchase-dialog" aria-labelledby="purchase-title">
+        <form id="purchase-form">
+            <div class="dialog-header"><div><h2 id="purchase-title">Registrar compra</h2><p>La compra aumenta las existencias y queda en movimientos.</p></div><button class="close-button" id="close-purchase-dialog" type="button" aria-label="Cerrar">×</button></div>
+            <div class="form-grid">
+                <div class="field"><label for="purchase-supplier">Proveedor</label><input id="purchase-supplier" name="supplier" maxlength="60" required placeholder="Nombre del proveedor"></div>
+                <div class="field full"><label for="purchase-product">Producto</label><select id="purchase-product" name="productId" required></select></div>
+                <div class="field"><label for="purchase-quantity">Cantidad recibida</label><input id="purchase-quantity" name="quantity" type="number" min="0.01" step="0.01" required placeholder="0"></div>
+                <div class="field"><label for="purchase-cost">Costo por unidad (Q)</label><input id="purchase-cost" name="unitPrice" type="number" min="0" step="0.01" required placeholder="0.00"></div>
+                <div class="field"><label for="purchase-payment-method">Forma de pago</label><select id="purchase-payment-method" name="paymentMethod" required><option value="cash">En efectivo</option></select></div>
+                <div class="field full"><label for="purchase-note">Nota (opcional)</label><input id="purchase-note" name="note" maxlength="80" placeholder="Observaciones de la compra"></div>
+            </div>
+            <div class="dialog-footer"><button class="secondary-button" id="cancel-purchase-dialog" type="button">Cancelar</button><button class="primary-button" type="submit">Guardar compra</button></div>
+        </form>
+    </dialog>
+    <dialog id="sale-dialog" aria-labelledby="sale-title">
+        <form id="sale-form">
+            <div class="dialog-header"><div><h2 id="sale-title">Registrar venta</h2><p>La venta actualizará existencias y generará su factura.</p></div><button class="close-button" id="close-sale-dialog" type="button" aria-label="Cerrar">×</button></div>
+            <div class="form-grid">
+                <div class="field full"><label for="sale-product">Producto</label><select id="sale-product" name="productId" required></select></div>
+                <div class="field"><label for="sale-quantity">Cantidad</label><input id="sale-quantity" name="quantity" type="number" min="0.01" step="0.01" required placeholder="0"></div>
+                <div class="field"><label for="sale-price">Precio por unidad (Q)</label><input id="sale-price" name="unitPrice" type="number" min="0" step="0.01" required placeholder="0.00"></div>
+                <div class="field full"><label for="sale-customer">Nombre del cliente (opcional)</label><input id="sale-customer" name="customerName" maxlength="80" placeholder="Nombre de la persona"></div>
+                <div class="field full"><label for="sale-note">Nota (opcional)</label><input id="sale-note" name="note" maxlength="80" placeholder="Observación de la venta"></div>
+            </div>
+            <div class="dialog-footer"><button class="secondary-button" id="cancel-sale-dialog" type="button">Cancelar</button><button class="primary-button" type="submit">Guardar venta y generar factura</button></div>
+        </form>
+    </dialog>
+    <dialog id="store-name-dialog" aria-labelledby="store-name-title">
+        <form id="store-name-form">
+            <div class="dialog-header"><div><h2 id="store-name-title">Nombre de la tienda</h2><p>Este nombre aparecerá en tus facturas impresas.</p></div><button class="close-button" id="close-store-name-dialog" type="button" aria-label="Cerrar">×</button></div>
+            <div class="form-grid"><div class="field full"><label for="store-name-input">Nombre comercial</label><input id="store-name-input" name="storeName" maxlength="70" required placeholder="Ej. Abarrotería Jiménez"></div></div>
+            <div class="dialog-footer"><button class="secondary-button" id="cancel-store-name-dialog" type="button">Cancelar</button><button class="primary-button" type="submit">Guardar nombre</button></div>
+        </form>
+    </dialog>
+    <dialog id="add-store-dialog" aria-labelledby="add-store-title">
+        <form id="add-store-form">
+            <div class="dialog-header"><div><h2 id="add-store-title">Añadir tienda</h2><p>Crea una tienda con su propio inventario y movimientos.</p></div><button class="close-button" id="close-add-store-dialog" type="button" aria-label="Cerrar">×</button></div>
+            <div class="form-grid">
+                <div class="field full"><label for="new-store-name">Nombre de la tienda</label><input id="new-store-name" name="name" maxlength="70" required placeholder="Ej. Sucursal Zona 1"></div>
+                <div class="field full"><label for="new-store-type">Tipo de tienda</label><select id="new-store-type" name="type" required><option value="consumo">Tienda de consumo / abarrotes</option><option value="ropa">Tienda de ropa</option><option value="otro">Otro tipo de tienda</option></select></div>
+                <div class="field full" id="new-store-custom-type-field" hidden><label for="new-store-custom-type">Escribe el tipo de tienda</label><input id="new-store-custom-type" name="customType" maxlength="50" placeholder="Ej. Tienda de zapatos"></div>
+            </div>
+            <div class="dialog-footer"><button class="secondary-button" id="cancel-add-store-dialog" type="button">Cancelar</button><button class="primary-button" type="submit">Crear tienda</button></div>
+        </form>
+    </dialog>
+    <dialog id="store-type-dialog" aria-labelledby="store-type-title">
+        <form id="store-type-form">
+            <div class="dialog-header"><div><h2 id="store-type-title">Tipo de tienda</h2><p>El tipo se guarda únicamente en la tienda seleccionada.</p></div><button class="close-button" id="close-store-type-dialog" type="button" aria-label="Cerrar">×</button></div>
+            <div class="form-grid">
+                <div class="field full"><label for="store-type-select">Tipo de tienda</label><select id="store-type-select" name="type" required><option value="consumo">Tienda de consumo / abarrotes</option><option value="ropa">Tienda de ropa</option><option value="otro">Otro tipo de tienda</option></select></div>
+                <div class="field full" id="store-custom-type-field" hidden><label for="store-custom-type">Escribe el tipo de tienda</label><input id="store-custom-type" name="customType" maxlength="50" placeholder="Ej. Tienda de zapatos"></div>
+            </div>
+            <div class="dialog-footer"><button class="secondary-button" id="cancel-store-type-dialog" type="button">Cancelar</button><button class="primary-button" type="submit">Guardar tipo</button></div>
+        </form>
+    </dialog>
+    <dialog id="accounts-dialog" aria-labelledby="accounts-title">
+        <div class="dialog-header">
+            <div><h2 id="accounts-title">Perfiles de usuario</h2><p>La cuenta principal puede otorgar permiso para eliminar usuarios a una sola cuenta a la vez.</p></div>
+            <button class="close-button" id="close-accounts-dialog" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="account-session">
+            <div class="field"><label for="active-account-select">Cuenta que está usando la app</label><select id="active-account-select"></select></div>
+            <p class="account-role">Estos perfiles se guardan en este dispositivo.</p>
+        </div>
+        <p class="account-permission-note">No se necesita correo ni conexión a internet para usar el inventario.</p>
+        <div class="account-list" id="account-list"></div>
+        <div class="account-store-actions" id="account-store-actions">
+            <div class="field"><label for="account-store-select">Tienda asignada</label><select id="account-store-select"></select></div>
+            <button class="secondary-button" id="add-account-store" type="button">＋ Añadir tienda propia</button>
+        </div>
+        <div class="account-store-fields" id="account-store-fields" hidden>
+            <div class="form-grid">
+                <div class="field full"><label for="account-new-store-name">Nombre de la nueva tienda</label><input id="account-new-store-name" maxlength="70" placeholder="Ej. Tienda de Ana"></div>
+                <div class="field full"><label for="account-new-store-type">Tipo de tienda</label><select id="account-new-store-type"><option value="consumo">Tienda de consumo / abarrotes</option><option value="ropa">Tienda de ropa</option><option value="otro">Otro tipo de tienda</option></select></div>
+                <div class="field full" id="account-new-custom-type-field" hidden><label for="account-new-custom-type">Escribe el tipo de tienda</label><input id="account-new-custom-type" maxlength="50" placeholder="Ej. Tienda de zapatos"></div>
+            </div>
+        </div>
+        <form id="account-form">
+            <div class="form-grid">
+                <div class="field full"><label for="account-name-input">Nombre de la cuenta</label><input id="account-name-input" name="name" maxlength="60" required placeholder="Nombre de la persona"></div>
+                <div class="field full"><label for="account-role-input">Tipo de cuenta</label><select id="account-role-input" name="role" required><option value="Empleado">Empleado</option><option value="Administradora">Administradora</option></select></div>
+            </div>
+            <div class="dialog-footer"><button class="secondary-button" id="cancel-accounts-dialog" type="button">Cerrar</button><button class="primary-button" type="submit">＋ Agregar cuenta</button></div>
+        </form>
+    </dialog>
+    <dialog id="delete-account-dialog" aria-labelledby="delete-account-title" aria-describedby="delete-account-message">
+        <div class="dialog-header">
+            <div><h2 id="delete-account-title">Eliminar cuenta</h2><p id="delete-account-message"></p></div>
+            <button class="close-button" id="close-delete-account-dialog" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="dialog-footer">
+            <button class="secondary-button" id="cancel-delete-account" type="button">No</button>
+            <button class="primary-button" id="confirm-delete-account" type="button">Sí, eliminar</button>
+        </div>
+    </dialog>
+    <dialog id="local-access-dialog" aria-labelledby="local-access-title" aria-describedby="local-access-note">
+        <form id="local-access-form">
+            <div class="dialog-header">
+                <div><h2 id="local-access-title">Cuenta de este dispositivo</h2><p id="local-access-description"></p></div>
+            </div>
+            <div class="form-grid">
+                <div class="field full" id="local-store-name-field"><label for="local-store-name">Nombre de la tienda o local</label><input id="local-store-name" name="storeName" maxlength="70" autocomplete="organization" required placeholder="Ej. Abarrotería Jiménez"></div>
+                <div class="field full"><label for="local-password">Contraseña</label><input id="local-password" name="password" type="password" minlength="8" autocomplete="current-password" required placeholder="Mínimo 8 caracteres"></div>
+                <div class="field full" id="local-password-confirm-field"><label for="local-password-confirm">Confirmar contraseña</label><input id="local-password-confirm" name="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required placeholder="Escribe de nuevo la contraseña"></div>
+                <div class="field full"><button class="secondary-button" id="toggle-local-password" type="button" aria-pressed="false">Mostrar contraseña</button></div>
+            </div>
+            <p class="account-permission-note" id="local-access-note">El acceso se recordará en este dispositivo para evitar otra ventana de contraseña. Puedes usarlo sin internet; los datos no se cifran ni se sincronizan con otros dispositivos.</p>
+            <p class="account-permission-note" id="local-access-error" role="alert" hidden></p>
+            <div class="dialog-footer"><button class="primary-button" id="local-access-submit" type="submit"></button></div>
+            <div class="account-permission-note"><button class="secondary-button" id="toggle-local-access-mode" type="button" hidden>Acceso local</button></div>
+        </form>
+    </dialog>
+    <dialog id="invoice-dialog" aria-labelledby="invoice-detail-title">
+        <div class="dialog-header"><div><h2 id="invoice-detail-title">Detalle de factura</h2><p id="invoice-detail-subtitle"></p></div><button class="close-button" id="close-invoice-dialog" type="button" aria-label="Cerrar">×</button></div>
+        <div class="invoice-paper" id="invoice-detail"></div>
+        <div class="dialog-footer"><button class="secondary-button" id="cancel-invoice-dialog" type="button">Cerrar</button><button class="primary-button" id="print-invoice" type="button"><span aria-hidden="true">🖨</span> Imprimir factura</button></div>
+    </dialog>
+    <dialog id="movement-dialog" aria-labelledby="movement-dialog-title">
+        <form id="movement-form">
+            <div class="dialog-header">
+                <div><h2 id="movement-dialog-title">Registrar movimiento</h2><p>Actualiza existencias sin perder el historial.</p></div>
+                <button class="close-button" id="close-movement-dialog" type="button" aria-label="Cerrar">×</button>
+            </div>
+            <div class="form-grid">
+                <div class="field full"><label for="movement-product">Producto</label><select id="movement-product" name="productId" required></select></div>
+                <div class="field"><label for="movement-type">Tipo de movimiento</label><select id="movement-type" name="type" required><option value="entry">Entrada de mercancía</option><option value="exit">Salida / merma</option></select></div>
+                <div class="field"><label for="movement-quantity">Cantidad</label><input id="movement-quantity" name="quantity" type="number" min="0.01" step="0.01" required placeholder="0"></div>
+                <div class="field full" id="movement-customer-field" hidden><label for="movement-customer">Nombre del cliente (opcional)</label><input id="movement-customer" name="customerName" maxlength="80" placeholder="Nombre de la persona"></div>
+                <div class="field" id="movement-price-field" hidden><label for="movement-price">Precio por unidad (Q)</label><input id="movement-price" name="unitPrice" type="number" min="0" step="0.01" placeholder="0.00"></div>
+                <div class="field full"><label for="movement-note">Nota / proveedor (opcional)</label><input id="movement-note" name="note" maxlength="80" placeholder="Factura, proveedor o motivo"></div>
+            </div>
+            <div class="dialog-footer"><button class="secondary-button" id="cancel-movement-dialog" type="button">Cancelar</button><button class="secondary-button" type="submit" name="action" value="movement">Guardar movimiento</button><button class="primary-button" id="movement-invoice-button" type="submit" name="action" value="invoice" hidden>Guardar salida y generar factura</button></div>
+        </form>
+    </dialog>
+    <dialog id="clear-confirm-dialog" aria-labelledby="clear-confirm-title" aria-describedby="clear-confirm-message">
+        <div class="dialog-header">
+            <div><h2 id="clear-confirm-title">Confirmar limpieza</h2><p id="clear-confirm-message"></p></div>
+            <button class="close-button" id="close-clear-confirm-dialog" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="dialog-footer">
+            <button class="secondary-button" id="cancel-clear" type="button">No limpiar</button>
+            <button class="primary-button" id="confirm-clear" type="button">Sí, limpiar</button>
+        </div>
+    </dialog>
+    <dialog id="install-dialog" aria-labelledby="install-title">
+        <div class="dialog-header">
+            <div><h2 id="install-title">Instalar Tienda Jiménez</h2><p id="install-subtitle">Agrega la aplicación a tu dispositivo para abrirla desde la pantalla principal.</p></div>
+            <button class="close-button" id="close-install-dialog" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="install-help" id="install-help"></div>
+        <div class="dialog-footer"><button class="primary-button" id="dismiss-install-dialog" type="button">Entendido</button></div>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <style>.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }</style>
+
+    <script>
+        (() => {
+            const STORAGE_KEY = "nido-store-products-v1";
+            const MOVEMENTS_KEY = "nido-store-movements-v1";
+            const TRANSACTIONS_KEY = "tienda-jimenez-transactions-v1";
+            const STORE_NAMES_KEY = "tienda-jimenez-store-display-names-v1";
+            const STORES_KEY = "tienda-jimenez-stores-v1";
+            const STORE_TYPES_KEY = "tienda-jimenez-store-types-v1";
+            const ACTIVE_STORE_KEY = "tienda-jimenez-active-store-v1";
+            const ACCOUNTS_KEY = "tienda-jimenez-local-accounts-v1";
+            const ACTIVE_ACCOUNT_KEY = "tienda-jimenez-active-account-v1";
+            const LOCAL_ACCESS_KEY = "tienda-jimenez-device-account-v1";
+            const PRIMARY_ACCOUNT = { id: "primary-admin", name: "Antonio jimenez", role: "Administradora", protected: true, canDeleteAccounts: true };
+            const initialProducts = [];
+            const list = document.getElementById("product-list");
+            const dialog = document.getElementById("product-dialog");
+            const form = document.getElementById("product-form");
+            const movementDialog = document.getElementById("movement-dialog");
+            const movementForm = document.getElementById("movement-form");
+            const search = document.getElementById("search");
+            const categoryFilter = document.getElementById("category-filter");
+            const stockFilter = document.getElementById("stock-filter");
+            const storeSelect = document.getElementById("store-select");
+            const toast = document.getElementById("toast");
+            const installDialog = document.getElementById("install-dialog");
+            let deferredInstallPrompt = null;
+            const clearConfirmDialog = document.getElementById("clear-confirm-dialog");
+            let pendingClearAction = null;
+            const accountsDialog = document.getElementById("accounts-dialog");
+            const deleteAccountDialog = document.getElementById("delete-account-dialog");
+            let pendingAccountDeleteId = null;
+            const storeNames = [...storeSelect.options].map(option => option.value);
+            let storeDisplayNames = Object.fromEntries([...storeSelect.options].map(option => [option.value, option.textContent.trim()]));
+            try {
+                const savedStores = localStorage.getItem(STORES_KEY);
+                if (savedStores) {
+                    const parsed = JSON.parse(savedStores);
+                    if (!Array.isArray(parsed) || parsed.some(store => typeof store !== "string" || !store.trim())) {
+                        throw new Error("La lista guardada de tiendas no tiene el formato esperado.");
+                    }
+                    parsed.forEach(store => {
+                        if (!storeNames.includes(store)) storeNames.push(store);
+                    });
+                }
+            } catch (error) {
+                console.error("No se pudo cargar la lista de tiendas:", error);
+                showToast("No se pudo leer la lista de tiendas guardada.");
+            }
+            storeNames.forEach(store => {
+                if (![...storeSelect.options].some(option => option.value === store)) storeSelect.add(new Option(store, store));
+                if (!storeDisplayNames[store]) storeDisplayNames[store] = store;
+            });
+            let storeTypes = Object.fromEntries(storeNames.map(store => [store, "consumo"]));
+            try {
+                const savedStoreTypes = localStorage.getItem(STORE_TYPES_KEY);
+                if (savedStoreTypes) {
+                    const parsed = JSON.parse(savedStoreTypes);
+                    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)
+                        || Object.values(parsed).some(type => typeof type !== "string")) {
+                        throw new Error("Los tipos de tienda guardados no tienen el formato esperado.");
+                    }
+                    storeNames.forEach(store => {
+                        if (typeof parsed[store] === "string" && parsed[store].trim()) {
+                            storeTypes[store] = parsed[store].trim();
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("No se pudieron cargar los tipos de tienda:", error);
+                showToast("No se pudo leer el tipo guardado de la tienda.");
+            }
+            let localAccounts = [PRIMARY_ACCOUNT];
+            try {
+                const savedAccounts = localStorage.getItem(ACCOUNTS_KEY);
+                if (savedAccounts) {
+                    const parsed = JSON.parse(savedAccounts);
+                    if (!Array.isArray(parsed) || parsed.some(account =>
+                        !account || typeof account.id !== "string" || typeof account.name !== "string"
+                        || !account.name.trim() || !["Administradora", "Empleado"].includes(account.role))) {
+                        throw new Error("Las cuentas guardadas no tienen el formato esperado.");
+                    }
+                    const delegateId = parsed.find(account =>
+                        account.id !== PRIMARY_ACCOUNT.id && account.canDeleteAccounts === true
+                    )?.id;
+                    localAccounts = parsed.map(account => ({
+                        id: account.id,
+                        name: account.id === PRIMARY_ACCOUNT.id ? PRIMARY_ACCOUNT.name : account.name.trim(),
+                        role: account.id === PRIMARY_ACCOUNT.id ? PRIMARY_ACCOUNT.role : account.role,
+                        protected: account.id === PRIMARY_ACCOUNT.id,
+                        canDeleteAccounts: account.id === PRIMARY_ACCOUNT.id || account.id === delegateId
+                    }));
+                    if (!localAccounts.some(account => account.id === PRIMARY_ACCOUNT.id)) {
+                        localAccounts.unshift(PRIMARY_ACCOUNT);
+                    }
+                }
+            } catch (error) {
+                console.error("No se pudieron cargar las cuentas locales:", error);
+                showToast("No se pudieron leer las cuentas guardadas.");
+            }
+            let activeAccountId = PRIMARY_ACCOUNT.id;
+            try {
+                const savedActiveAccount = localStorage.getItem(ACTIVE_ACCOUNT_KEY);
+                if (savedActiveAccount && localAccounts.some(account => account.id === savedActiveAccount)) {
+                    activeAccountId = savedActiveAccount;
+                }
+            } catch (error) {
+                console.error("No se pudo cargar el perfil local activo:", error);
+                showToast("No se pudo leer el perfil activo.");
+            }
+            let storeInventories;
+            let storeMovements;
+            let storeTransactions;
+            let products;
+            let activeStore = storeSelect.value;
+            try {
+                const savedActiveStore = localStorage.getItem(ACTIVE_STORE_KEY);
+                if (savedActiveStore && storeNames.includes(savedActiveStore)) activeStore = savedActiveStore;
+                storeSelect.value = activeStore;
+            } catch (error) {
+                console.error("No se pudo cargar la tienda seleccionada:", error);
+                showToast("No se pudo leer la tienda seleccionada.");
+            }
+            let editingId = null;
+            let toastTimer;
+
+            try {
+                const savedStoreNames = localStorage.getItem(STORE_NAMES_KEY);
+                if (savedStoreNames) {
+                    const parsed = JSON.parse(savedStoreNames);
+                    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)
+                        || Object.values(parsed).some(name => typeof name !== "string")) {
+                        throw new Error("Los nombres de tienda guardados no tienen el formato esperado.");
+                    }
+                    storeNames.forEach(store => {
+                        if (typeof parsed[store] === "string" && parsed[store].trim()) {
+                            storeDisplayNames[store] = parsed[store].trim();
+                            [...storeSelect.options].find(option => option.value === store).textContent = parsed[store].trim();
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("No se pudieron cargar los nombres de tienda:", error);
+                showToast("No se pudo leer el nombre guardado de la tienda.");
+            }
+
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved === null) {
+                    storeInventories = { "Casa Nativa": initialProducts };
+                } else {
+                    const parsed = JSON.parse(saved);
+                    storeInventories = Array.isArray(parsed) ? { "Casa Nativa": parsed } : parsed;
+                    if (!storeInventories || typeof storeInventories !== "object" || Array.isArray(storeInventories)
+                        || Object.values(storeInventories).some(inventory => !Array.isArray(inventory))) {
+                        throw new Error("Los datos guardados no tienen el formato esperado.");
+                    }
+                    storeNames.forEach(store => {
+                        if (!storeInventories[store]) storeInventories[store] = [];
+                        storeInventories[store] = storeInventories[store].map(normalizeProduct);
+                    });
+                }
+                products = storeInventories[activeStore] || [];
+            } catch (error) {
+                console.error("No se pudo cargar el inventario guardado:", error);
+                storeInventories = { "Casa Nativa": initialProducts };
+                products = storeInventories[activeStore];
+                showToast("No se pudo leer el inventario guardado. Se muestran los datos de ejemplo.");
+            }
+            try {
+                const savedMovements = localStorage.getItem(MOVEMENTS_KEY);
+                storeMovements = savedMovements ? JSON.parse(savedMovements) : {};
+                if (!storeMovements || typeof storeMovements !== "object" || Array.isArray(storeMovements)
+                    || Object.values(storeMovements).some(movements => !Array.isArray(movements) || !movements.every(isValidMovement))) {
+                    throw new Error("El historial guardado no tiene el formato esperado.");
+                }
+                storeNames.forEach(store => {
+                    if (!Array.isArray(storeMovements[store])) storeMovements[store] = [];
+                });
+            } catch (error) {
+                console.error("No se pudo cargar el historial de movimientos:", error);
+                storeMovements = Object.fromEntries(storeNames.map(store => [store, []]));
+                showToast("No se pudo leer el historial de movimientos.");
+            }
+            try {
+                const savedTransactions = localStorage.getItem(TRANSACTIONS_KEY);
+                storeTransactions = savedTransactions ? JSON.parse(savedTransactions) : {};
+                if (!storeTransactions || typeof storeTransactions !== "object" || Array.isArray(storeTransactions)
+                    || Object.values(storeTransactions).some(items => !Array.isArray(items) || !items.every(isValidTransaction))) {
+                    throw new Error("El historial de facturas guardado no tiene el formato esperado.");
+                }
+                storeNames.forEach(store => {
+                    if (!Array.isArray(storeTransactions[store])) storeTransactions[store] = [];
+                    storeTransactions[store] = storeTransactions[store].filter(item => item.type === "sale");
+                });
+            } catch (error) {
+                console.error("No se pudo cargar el historial de facturas:", error);
+                storeTransactions = Object.fromEntries(storeNames.map(store => [store, []]));
+                showToast("No se pudo leer el historial de compras y ventas.");
+            }
+
+            function normalizeProduct(item) {
+                if (!item || typeof item !== "object" || typeof item.id !== "string"
+                    || typeof item.name !== "string" || typeof item.category !== "string"
+                    || !Number.isFinite(Number(item.price)) || !Number.isFinite(Number(item.stock))) {
+                    throw new Error("Un producto guardado tiene datos incompletos.");
+                }
+                return {
+                    ...item,
+                    sku: String(item.sku || item.barcode || item.id),
+                    cost: Number.isFinite(Number(item.cost)) ? Number(item.cost) : Number(item.price) * 0.7,
+                    price: Number(item.price),
+                    stock: Number(item.stock),
+                    minStock: Number.isFinite(Number(item.minStock)) ? Number(item.minStock) : 5,
+                    unit: typeof item.unit === "string" && item.unit ? item.unit : "pza",
+                    expirationDate: typeof item.expirationDate === "string" ? item.expirationDate : "",
+                    supplier: typeof item.supplier === "string" ? item.supplier : "",
+                    emoji: typeof item.emoji === "string" ? item.emoji : "📦"
+                };
+            }
+
+            function isValidMovement(item) {
+                return item && typeof item.id === "string" && typeof item.name === "string"
+                    && typeof item.productId === "string" && (item.type === "entry" || item.type === "exit")
+                    && Number.isFinite(item.quantity) && Number.isFinite(item.stockAfter)
+                    && typeof item.date === "string";
+            }
+
+            function isValidTransaction(item) {
+                return item && typeof item.id === "string" && typeof item.invoice === "string"
+                    && (item.type === "purchase" || item.type === "sale")
+                    && typeof item.productId === "string" && typeof item.productName === "string"
+                    && typeof item.category === "string" && typeof item.date === "string"
+                    && Number.isFinite(item.quantity) && Number.isFinite(item.unitPrice)
+                    && Number.isFinite(item.total)
+                    && (item.customerName === undefined || typeof item.customerName === "string")
+                    && (item.storeName === undefined || typeof item.storeName === "string");
+            }
+
+            function persist() {
+                try {
+                    storeInventories[activeStore] = products;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(storeInventories));
+                    localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(storeMovements));
+                    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(storeTransactions));
+                } catch (error) {
+                    console.error("No se pudo guardar el inventario:", error);
+                    showToast("No se pudieron guardar los cambios en este navegador.");
+                }
+            }
+
+            function cloudUserDocument() {
+                if (!cloudDb || !cloudUser) return null;
+                return cloudDb.collection("users").doc(cloudUser.uid);
+            }
+
+            function cloudMetadata() {
+                return {
+                    version: 1,
+                    email: cloudUser?.email || "",
+                    stores: [...storeNames],
+                    displayNames: storeDisplayNames,
+                    storeTypes,
+                    accounts: localAccounts,
+                    activeAccountId,
+                    activeStore
+                };
+            }
+
+            function saveCloudError(operation, error) {
+                console.error(`${operation}:`, error);
+                showToast("No se pudo sincronizar. Revisa tu conexión a internet e inténtalo de nuevo.");
+            }
+
+            function cacheCloudMetadata() {
+                try {
+                    localStorage.setItem(STORES_KEY, JSON.stringify(storeNames));
+                    localStorage.setItem(STORE_NAMES_KEY, JSON.stringify(storeDisplayNames));
+                    localStorage.setItem(STORE_TYPES_KEY, JSON.stringify(storeTypes));
+                    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(localAccounts));
+                    localStorage.setItem(ACTIVE_ACCOUNT_KEY, activeAccountId);
+                    localStorage.setItem(ACTIVE_STORE_KEY, activeStore);
+                    if (cloudUser) localStorage.setItem(LOCAL_CLOUD_UID_KEY, cloudUser.uid);
+                } catch (error) {
+                    console.error("No se pudieron guardar localmente los datos sincronizados:", error);
+                    showToast("No se pudo guardar una copia local de la sincronización.");
+                }
+            }
+
+            function cloneStoreData(data) {
+                return JSON.parse(JSON.stringify(data));
+            }
+
+            function storeDataSnapshot(storeId) {
+                return cloneStoreData({
+                    products: storeInventories[storeId] || [],
+                    movements: storeMovements[storeId] || [],
+                    transactions: storeTransactions[storeId] || []
+                });
+            }
+
+            function mergeStoreRecords(baseRecords, localRecords, remoteRecords) {
+                const byId = records => new Map(records.map(record => [record.id, record]));
+                const base = byId(baseRecords);
+                const local = byId(localRecords);
+                const merged = byId(remoteRecords);
+                for (const [id, baseRecord] of base) {
+                    if (!local.has(id)) {
+                        merged.delete(id);
+                    } else if (JSON.stringify(local.get(id)) !== JSON.stringify(baseRecord)) {
+                        merged.set(id, local.get(id));
+                    }
+                }
+                for (const [id, record] of local) {
+                    if (!base.has(id)) merged.set(id, record);
+                }
+                return [...merged.values()];
+            }
+
+            function mergeStoreData(base, local, remote) {
+                return {
+                    products: mergeStoreRecords(base.products, local.products, remote.products),
+                    movements: mergeStoreRecords(base.movements, local.movements, remote.movements)
+                        .sort((a, b) => String(b.date).localeCompare(String(a.date))),
+                    transactions: mergeStoreRecords(base.transactions, local.transactions, remote.transactions)
+                        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+                };
+            }
+
+            async function persistCloudMetadata() {
+                const userDocument = cloudUserDocument();
+                if (!cloudReady || !userDocument || cloudApplying) return;
+                try {
+                    await userDocument.collection("appData").doc("metadata").set({
+                        ...cloudMetadata(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                } catch (error) {
+                    saveCloudError("No se pudo sincronizar la cuenta y la tienda seleccionada", error);
+                }
+            }
+
+            async function persistCloudStore(storeId) {
+                const userDocument = cloudUserDocument();
+                if (!cloudReady || !userDocument || cloudApplying || !storeNames.includes(storeId)) return;
+                const ownerId = cloudUser.uid;
+                const localSnapshot = storeDataSnapshot(storeId);
+                const baseSnapshot = cloneStoreData(cloudStoreBaselines[storeId] || {
+                    products: [],
+                    movements: [],
+                    transactions: []
+                });
+                const previousWrite = cloudStoreWriteQueues.get(storeId) || Promise.resolve();
+                const write = previousWrite.catch(() => {}).then(async () => {
+                    if (cloudUser?.uid !== ownerId) return;
+                    const storeDocument = userDocument.collection("stores").doc(storeId);
+                    let committedData;
+                    await cloudDb.runTransaction(async transaction => {
+                        const snapshot = await transaction.get(storeDocument);
+                        const remote = snapshot.exists
+                            ? {
+                                products: Array.isArray(snapshot.data().products) ? snapshot.data().products : [],
+                                movements: Array.isArray(snapshot.data().movements) ? snapshot.data().movements : [],
+                                transactions: Array.isArray(snapshot.data().transactions) ? snapshot.data().transactions : []
+                            }
+                            : { products: [], movements: [], transactions: [] };
+                        committedData = mergeStoreData(baseSnapshot, localSnapshot, remote);
+                        transaction.set(storeDocument, {
+                            ...committedData,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+                    if (cloudUser?.uid !== ownerId) return;
+                    cloudStoreBaselines[storeId] = cloneStoreData(committedData);
+                    if (JSON.stringify(storeDataSnapshot(storeId)) === JSON.stringify(localSnapshot)) {
+                        applyCloudStore(storeId, committedData);
+                    }
+                });
+                cloudStoreWriteQueues.set(storeId, write);
+                try {
+                    await write;
+                } catch (error) {
+                    saveCloudError("No se pudo sincronizar el inventario de la tienda", error);
+                }
+            }
+
+            function applyCloudMetadata(data) {
+                if (!data || !Array.isArray(data.stores)
+                    || data.stores.some(store => typeof store !== "string" || !store.trim())
+                    || !data.displayNames || typeof data.displayNames !== "object"
+                    || !data.storeTypes || typeof data.storeTypes !== "object") {
+                    throw new Error("Los datos sincronizados de la cuenta tienen un formato inválido.");
+                }
+                cloudApplying = true;
+                try {
+                    storeNames.splice(0, storeNames.length, ...new Set(data.stores));
+                    if (!storeNames.length) throw new Error("La cuenta sincronizada no tiene tiendas.");
+                    storeDisplayNames = Object.fromEntries(storeNames.map(store => [
+                        store,
+                        typeof data.displayNames[store] === "string" && data.displayNames[store].trim()
+                            ? data.displayNames[store].trim()
+                            : store
+                    ]));
+                    storeTypes = Object.fromEntries(storeNames.map(store => [
+                        store,
+                        typeof data.storeTypes[store] === "string" && data.storeTypes[store].trim()
+                            ? data.storeTypes[store].trim()
+                            : "consumo"
+                    ]));
+                    if (Array.isArray(data.accounts)) {
+                        const validAccounts = data.accounts.filter(account =>
+                            account && typeof account.id === "string" && typeof account.name === "string"
+                            && account.name.trim() && ["Administradora", "Empleado"].includes(account.role));
+                        const delegate = validAccounts.find(account =>
+                            account.id !== PRIMARY_ACCOUNT.id && account.canDeleteAccounts === true
+                        )?.id;
+                        localAccounts = validAccounts.map(account => ({
+                            id: account.id,
+                            name: account.id === PRIMARY_ACCOUNT.id ? PRIMARY_ACCOUNT.name : account.name.trim(),
+                            role: account.id === PRIMARY_ACCOUNT.id ? PRIMARY_ACCOUNT.role : account.role,
+                            protected: account.id === PRIMARY_ACCOUNT.id,
+                            canDeleteAccounts: account.id === PRIMARY_ACCOUNT.id || account.id === delegate
+                        }));
+                        if (!localAccounts.some(account => account.id === PRIMARY_ACCOUNT.id)) localAccounts.unshift(PRIMARY_ACCOUNT);
+                    } else localAccounts = [PRIMARY_ACCOUNT];
+                    activeAccountId = localAccounts.some(account => account.id === data.activeAccountId)
+                        ? data.activeAccountId
+                        : PRIMARY_ACCOUNT.id;
+                    activeStore = storeNames.includes(data.activeStore) ? data.activeStore : storeNames[0];
+                    storeSelect.replaceChildren(...storeNames.map(store =>
+                        new Option(storeDisplayNames[store] || store, store)));
+                    storeSelect.value = activeStore;
+                    storeNames.forEach(store => {
+                        if (!Array.isArray(storeInventories[store])) storeInventories[store] = [];
+                        if (!Array.isArray(storeMovements[store])) storeMovements[store] = [];
+                        if (!Array.isArray(storeTransactions[store])) storeTransactions[store] = [];
+                    });
+                    products = storeInventories[activeStore];
+                    cacheCloudMetadata();
+                } finally {
+                    cloudApplying = false;
+                }
+            }
+
+            function applyCloudStore(storeId, data, updateBaseline = true) {
+                if (!storeNames.includes(storeId) || !data) return;
+                if (!Array.isArray(data.products) || !Array.isArray(data.movements) || !Array.isArray(data.transactions)) {
+                    throw new Error(`Los datos sincronizados de la tienda "${storeId}" tienen un formato inválido.`);
+                }
+                cloudApplying = true;
+                try {
+                    storeInventories[storeId] = data.products;
+                    storeMovements[storeId] = data.movements;
+                    storeTransactions[storeId] = data.transactions;
+                    if (updateBaseline) cloudStoreBaselines[storeId] = storeDataSnapshot(storeId);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(storeInventories));
+                    localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(storeMovements));
+                    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(storeTransactions));
+                    if (activeStore === storeId) {
+                        products = storeInventories[storeId];
+                        render();
+                    }
+                } finally {
+                    cloudApplying = false;
+                }
+            }
+
+            function resetLocalWorkspace(storeName) {
+                Object.keys(cloudStoreBaselines).forEach(store => delete cloudStoreBaselines[store]);
+                cloudStoreWriteQueues.clear();
+                storeNames.splice(0, storeNames.length, "Casa Nativa");
+                storeDisplayNames = { "Casa Nativa": storeName || "Mi tienda" };
+                storeTypes = { "Casa Nativa": "consumo" };
+                storeInventories = { "Casa Nativa": [] };
+                storeMovements = { "Casa Nativa": [] };
+                storeTransactions = { "Casa Nativa": [] };
+                localAccounts = [PRIMARY_ACCOUNT];
+                activeAccountId = PRIMARY_ACCOUNT.id;
+                activeStore = "Casa Nativa";
+                products = storeInventories[activeStore];
+                storeSelect.replaceChildren(new Option(storeDisplayNames[activeStore], activeStore));
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(storeInventories));
+                    localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(storeMovements));
+                    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(storeTransactions));
+                } catch (error) {
+                    console.error("No se pudo separar el inventario local de la nueva cuenta:", error);
+                    showToast("No se pudo preparar el espacio local de la nueva cuenta.");
+                }
+            }
+
+            async function bootstrapCloudUser(user, firstStoreName) {
+                cloudUser = user;
+                const userDocument = cloudUserDocument();
+                const metadataDocument = userDocument.collection("appData").doc("metadata");
+                const metadataSnapshot = await metadataDocument.get();
+                const previousOwnerId = localStorage.getItem(LOCAL_CLOUD_UID_KEY);
+                if (previousOwnerId && previousOwnerId !== user.uid) resetLocalWorkspace("");
+                if (metadataSnapshot.exists) {
+                    applyCloudMetadata(metadataSnapshot.data());
+                    const storesSnapshot = await userDocument.collection("stores").get();
+                    storesSnapshot.forEach(document => applyCloudStore(document.id, document.data()));
+                    for (const store of storeNames) {
+                        if (!storesSnapshot.docs.some(document => document.id === store)) {
+                            storeInventories[store] = [];
+                            storeMovements[store] = [];
+                            storeTransactions[store] = [];
+                            await persistCloudStoreAfterBootstrap(userDocument, store);
+                        }
+                    }
+                } else {
+                    if (firstStoreName) storeDisplayNames[activeStore] = firstStoreName;
+                    const selectedOption = [...storeSelect.options].find(option => option.value === activeStore);
+                    if (selectedOption) selectedOption.textContent = storeDisplayNames[activeStore] || activeStore;
+                    for (const store of storeNames) await persistCloudStoreAfterBootstrap(userDocument, store);
+                    await metadataDocument.set({
+                        ...cloudMetadata(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    cacheCloudMetadata();
+                }
+                cloudReady = true;
+                if (cloudMetadataUnsubscribe) cloudMetadataUnsubscribe();
+                if (cloudStoresUnsubscribe) cloudStoresUnsubscribe();
+                cloudMetadataUnsubscribe = metadataDocument.onSnapshot(snapshot => {
+                    if (cloudUser?.uid !== user.uid || !snapshot.exists || cloudApplying) return;
+                    try {
+                        applyCloudMetadata(snapshot.data());
+                        renderAccounts();
+                        render();
+                    } catch (error) {
+                        saveCloudError("No se pudo aplicar la cuenta sincronizada", error);
+                    }
+                }, error => saveCloudError("No se pudo recibir la sincronización de la cuenta", error));
+                cloudStoresUnsubscribe = userDocument.collection("stores").onSnapshot(snapshot => {
+                    if (cloudUser?.uid !== user.uid) return;
+                    snapshot.docChanges().forEach(change => {
+                        try {
+                            if (change.type === "removed") {
+                                delete storeInventories[change.doc.id];
+                                delete storeMovements[change.doc.id];
+                                delete storeTransactions[change.doc.id];
+                                delete cloudStoreBaselines[change.doc.id];
+                            } else {
+                                const storeId = change.doc.id;
+                                const documentData = change.doc.data();
+                                const remote = {
+                                    products: Array.isArray(documentData.products) ? documentData.products : [],
+                                    movements: Array.isArray(documentData.movements) ? documentData.movements : [],
+                                    transactions: Array.isArray(documentData.transactions) ? documentData.transactions : []
+                                };
+                                if (!storeNames.includes(storeId)) return;
+                                const baseline = cloudStoreBaselines[storeId] || {
+                                    products: [],
+                                    movements: [],
+                                    transactions: []
+                                };
+                                const local = storeDataSnapshot(storeId);
+                                const merged = mergeStoreData(baseline, local, remote);
+                                cloudStoreBaselines[storeId] = cloneStoreData(remote);
+                                if (JSON.stringify(merged) !== JSON.stringify(remote)) {
+                                    applyCloudStore(storeId, merged, false);
+                                    void persistCloudStore(storeId);
+                                } else {
+                                    applyCloudStore(storeId, remote);
+                                }
+                            }
+                        } catch (error) {
+                            saveCloudError("No se pudo aplicar el inventario sincronizado", error);
+                        }
+                    });
+                }, error => saveCloudError("No se pudo recibir el inventario sincronizado", error));
+                renderAccounts();
+                render();
+                document.body.classList.remove("local-access-locked");
+                localAccessForm.reset();
+                localAccessDialog.close();
+                showToast("Cuenta, tienda e inventario sincronizados.");
+            }
+
+            async function persistCloudStoreAfterBootstrap(userDocument, storeId) {
+                await userDocument.collection("stores").doc(storeId).set({
+                    products: storeInventories[storeId] || [],
+                    movements: storeMovements[storeId] || [],
+                    transactions: storeTransactions[storeId] || [],
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(storeInventories));
+                localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(storeMovements));
+                localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(storeTransactions));
+            }
+
+            function startCloudBootstrap(user, firstStoreName) {
+                if (cloudBootstrapUserId === user.uid && cloudBootstrapPromise) return cloudBootstrapPromise;
+                cloudReady = false;
+                cloudBootstrapUserId = user.uid;
+                cloudBootstrapPromise = bootstrapCloudUser(user, firstStoreName)
+                    .catch(error => {
+                        console.error("No se pudieron cargar los datos de Firebase:", error);
+                        cloudBootstrapPromise = null;
+                        cloudBootstrapUserId = "";
+                        document.body.classList.add("local-access-locked");
+                        configureCloudAccess("login");
+                        document.getElementById("local-email").value = user.email || "";
+                        showCloudAccessError("No se pudieron cargar los datos de la nube. Revisa la conexión y las reglas de Firestore.");
+                    });
+                return cloudBootstrapPromise;
+            }
+
+            function getStatus(product) {
+                if (product.expirationDate) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const expiry = new Date(`${product.expirationDate}T00:00:00`);
+                    const daysLeft = Math.ceil((expiry - today) / 86400000);
+                    if (daysLeft < 0 && product.stock > 0) return "expired";
+                    if (daysLeft >= 0 && daysLeft <= 7 && product.stock > 0) return "expiring";
+                }
+                if (product.stock <= 0) return "out";
+                if (product.stock <= product.minStock) return "low";
+                return "ok";
+            }
+
+            function formatPrice(price) {
+                return new Intl.NumberFormat("es-GT", { style: "currency", currency: "GTQ" }).format(price);
+            }
+
+            function formatQuantity(quantity) {
+                return new Intl.NumberFormat("es-GT", { maximumFractionDigits: 2 }).format(quantity);
+            }
+
+            function formatStoreType(type) {
+                if (type === "ropa") return "Tienda de ropa";
+                if (type === "consumo" || !type) return "Tienda de consumo / abarrotes";
+                return type;
+            }
+
+            function renderAccounts() {
+                const accountList = document.getElementById("account-list");
+                const accountSelect = document.getElementById("active-account-select");
+                const activeAccount = localAccounts.find(account => account.id === activeAccountId) || PRIMARY_ACCOUNT;
+                accountSelect.replaceChildren(...localAccounts.map(account => new Option(`${account.name} · ${account.role}`, account.id)));
+                accountSelect.value = activeAccount.id;
+                const isPrimary = activeAccount.id === PRIMARY_ACCOUNT.id;
+                document.getElementById("account-form").hidden = !isPrimary;
+                accountList.replaceChildren();
+                localAccounts.forEach(account => {
+                    const item = document.createElement("div");
+                    item.className = "account-item";
+                    const details = document.createElement("div");
+                    const name = document.createElement("div");
+                    name.className = "account-name";
+                    name.textContent = account.name;
+                    const role = document.createElement("div");
+                    role.className = "account-role";
+                    role.textContent = account.protected
+                        ? `${account.role} · Cuenta principal protegida`
+                        : account.canDeleteAccounts ? `${account.role} · Puede eliminar usuarios` : account.role;
+                    details.append(name, role);
+                    if (!account.protected) {
+                        const permission = document.createElement("button");
+                        permission.type = "button";
+                        permission.className = "secondary-button";
+                        permission.dataset.permissionAccountId = account.id;
+                        if (isPrimary) {
+                            const existingDelegate = localAccounts.find(item => !item.protected && item.canDeleteAccounts);
+                            permission.textContent = account.canDeleteAccounts
+                                ? "Retirar permiso"
+                                : existingDelegate ? "Transferir permiso" : "Dar permiso";
+                            permission.setAttribute("aria-label", account.canDeleteAccounts
+                                ? `Retirar permiso para eliminar usuarios a ${account.name}`
+                                : `Dar permiso para eliminar usuarios a ${account.name}`);
+                            item.append(details, permission);
+                        } else {
+                            item.append(details);
+                        }
+                    } else {
+                        item.append(details);
+                    }
+                    const remove = document.createElement("button");
+                    remove.type = "button";
+                    remove.className = "account-delete";
+                    remove.dataset.accountId = account.id;
+                    remove.textContent = "Eliminar";
+                    const canRemove = activeAccount.canDeleteAccounts && !account.protected && account.id !== activeAccount.id;
+                    remove.disabled = !canRemove;
+                    remove.setAttribute("aria-label", canRemove
+                        ? `Eliminar cuenta ${account.name}`
+                        : account.protected ? "La cuenta principal no se puede eliminar"
+                            : account.id === activeAccount.id ? "No puedes eliminar el perfil que estás usando"
+                                : "El perfil activo no tiene permiso para eliminar cuentas");
+                    item.append(remove);
+                    accountList.append(item);
+                });
+                document.querySelector(".user-name").textContent = activeAccount.name;
+                document.querySelector(".user-role").textContent = activeAccount.role;
+                document.querySelector(".avatar").textContent = activeAccount.name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toLocaleUpperCase("es");
+                document.querySelector(".topbar-avatar").textContent = activeAccount.name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toLocaleUpperCase("es");
+                document.querySelector(".topbar-avatar").setAttribute("aria-label", `Perfil de ${activeAccount.name}`);
+            }
+
+            function closeDeleteAccountConfirmation(returnToAccounts) {
+                pendingAccountDeleteId = null;
+                deleteAccountDialog.close();
+                if (returnToAccounts) accountsDialog.showModal();
+            }
+
+            function updateCategories() {
+                const categories = [...new Set(products.map(product => product.category))].sort((a, b) => a.localeCompare(b, "es"));
+                const selected = categoryFilter.value;
+                categoryFilter.replaceChildren(new Option("Todas las categorías", ""));
+                categories.forEach(category => categoryFilter.add(new Option(category, category)));
+                if (categories.includes(selected)) categoryFilter.value = selected;
+                const type = storeTypes[activeStore] || "consumo";
+                const suggestedCategories = type === "ropa"
+                    ? ["Ropa de mujer", "Ropa de hombre", "Ropa infantil", "Calzado", "Accesorios"]
+                    : type === "consumo"
+                        ? ["Abarrotes", "Bebidas", "Lácteos", "Limpieza", "Frutas y verduras"]
+                        : [];
+                const availableCategories = [...new Set([...suggestedCategories, ...categories])];
+                document.getElementById("category-options").replaceChildren(...availableCategories.map(category => {
+                    const option = document.createElement("option");
+                    option.value = category;
+                    return option;
+                }));
+                document.getElementById("product-category-input").placeholder = type === "ropa"
+                    ? "Ej. Ropa de mujer"
+                    : type === "consumo" ? "Ej. Abarrotes" : "Escribe una categoría";
+            }
+
+            function render() {
+                document.querySelector(".brand-name").textContent = storeDisplayNames[activeStore] || activeStore;
+                document.getElementById("store-name-input").value = storeDisplayNames[activeStore] || activeStore;
+                document.getElementById("selected-store-type").textContent = `Tipo: ${formatStoreType(storeTypes[activeStore])}`;
+                updateCategories();
+                const query = search.value.trim().toLocaleLowerCase("es");
+                const category = categoryFilter.value;
+                const status = stockFilter.value;
+                const filtered = products.filter(product => {
+                    const matchesSearch = `${product.name} ${product.category} ${product.supplier}`.toLocaleLowerCase("es").includes(query);
+                    return matchesSearch && (!category || product.category === category) && (!status || getStatus(product) === status);
+                });
+                const labels = { ok: "Suficiente", low: "Por reponer", out: "Agotado", expired: "Caducado", expiring: "Por caducar" };
+
+                list.replaceChildren();
+                if (filtered.length === 0) {
+                    const row = document.createElement("tr");
+                    const cell = document.createElement("td");
+                    cell.colSpan = 7;
+                    cell.innerHTML = '<div class="empty-state"><strong>No encontramos productos</strong>Prueba con otra búsqueda o agrega un producto nuevo.</div>';
+                    row.append(cell);
+                    list.append(row);
+                } else {
+                    filtered.forEach(product => {
+                        const statusKey = getStatus(product);
+                        const row = document.createElement("tr");
+                        row.className = "product-row";
+                        const productCell = document.createElement("td");
+                        const productInfo = document.createElement("div");
+                        productInfo.className = "product-cell";
+                        const emoji = document.createElement("span");
+                        emoji.className = "product-emoji";
+                        emoji.setAttribute("aria-hidden", "true");
+                        emoji.textContent = product.emoji || "📦";
+                        const nameGroup = document.createElement("div");
+                        const name = document.createElement("div");
+                        name.className = "product-name";
+                        name.textContent = product.name;
+                        if (product.supplier) {
+                            const supplier = document.createElement("div");
+                            supplier.className = "product-sku";
+                            supplier.textContent = product.supplier;
+                            nameGroup.append(name, supplier);
+                        } else {
+                            nameGroup.append(name);
+                        }
+                        productInfo.append(emoji, nameGroup);
+                        productCell.append(productInfo);
+
+                        const categoryCell = document.createElement("td");
+                        const categoryTag = document.createElement("span");
+                        categoryTag.className = "category-pill";
+                        categoryTag.textContent = product.category;
+                        categoryCell.append(categoryTag);
+                        const priceCell = document.createElement("td");
+                        const priceStack = document.createElement("div");
+                        priceStack.className = "price-stack";
+                        const salePrice = document.createElement("span");
+                        salePrice.className = "price";
+                        salePrice.textContent = formatPrice(product.price);
+                        priceStack.append(salePrice);
+                        priceCell.append(priceStack);
+
+                        const stockCell = document.createElement("td");
+                        stockCell.className = "stock-cell";
+                        const stockNumber = document.createElement("span");
+                        stockNumber.className = "stock-number";
+                        stockNumber.textContent = `${formatQuantity(product.stock)} ${product.unit}`;
+                        const stockMeta = document.createElement("div");
+                        stockMeta.className = "stock-meta";
+                        stockMeta.textContent = `Mín. ${formatQuantity(product.minStock)} ${product.unit}`;
+                        const stockTrack = document.createElement("div");
+                        stockTrack.className = "stock-track";
+                        stockTrack.setAttribute("aria-hidden", "true");
+                        const stockFill = document.createElement("div");
+                        stockFill.className = `stock-fill${statusKey === "ok" ? "" : ` ${statusKey === "low" || statusKey === "expiring" ? "low" : statusKey === "out" || statusKey === "expired" ? "out" : ""}`}`;
+                        stockFill.style.width = `${Math.min(product.stock / Math.max(product.minStock * 3, 1) * 100, 100)}%`;
+                        stockTrack.append(stockFill);
+                        stockCell.append(stockNumber, stockMeta, stockTrack);
+
+                        const expiryCell = document.createElement("td");
+                        const expiryText = document.createElement("span");
+                        if (product.expirationDate) {
+                            expiryText.textContent = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${product.expirationDate}T00:00:00`));
+                            const expiryMeta = document.createElement("div");
+                            expiryMeta.className = "expiry-meta";
+                            const daysLeft = Math.ceil((new Date(`${product.expirationDate}T00:00:00`) - new Date(new Date().setHours(0, 0, 0, 0))) / 86400000);
+                            expiryMeta.textContent = daysLeft < 0 ? "Fecha vencida" : daysLeft <= 7 ? `${daysLeft} días` : "En fecha";
+                            expiryCell.append(expiryText, expiryMeta);
+                        } else {
+                            expiryText.className = "expiry-meta";
+                            expiryText.textContent = "No aplica";
+                            expiryCell.append(expiryText);
+                        }
+
+                        const statusCell = document.createElement("td");
+                        const statusBadge = document.createElement("span");
+                        statusBadge.className = `status ${statusKey}`;
+                        statusBadge.textContent = labels[statusKey];
+                        statusCell.append(statusBadge);
+                        const actionsCell = document.createElement("td");
+                        const actions = document.createElement("div");
+                        actions.className = "actions";
+                        const editButton = document.createElement("button");
+                        editButton.className = "icon-button";
+                        editButton.type = "button";
+                        editButton.dataset.action = "edit";
+                        editButton.dataset.id = product.id;
+                        editButton.setAttribute("aria-label", `Editar ${product.name}`);
+                        editButton.title = "Editar producto";
+                        editButton.textContent = "✎";
+                        const movementButton = document.createElement("button");
+                        movementButton.className = "icon-button";
+                        movementButton.type = "button";
+                        movementButton.dataset.action = "movement";
+                        movementButton.dataset.id = product.id;
+                        movementButton.setAttribute("aria-label", `Registrar entrada o salida de ${product.name}`);
+                        movementButton.title = "Registrar entrada / salida";
+                        movementButton.textContent = "↕";
+                        const deleteButton = document.createElement("button");
+                        deleteButton.className = "icon-button delete";
+                        deleteButton.type = "button";
+                        deleteButton.dataset.action = "delete";
+                        deleteButton.dataset.id = product.id;
+                        deleteButton.setAttribute("aria-label", `Eliminar ${product.name}`);
+                        deleteButton.title = "Eliminar producto";
+                        deleteButton.textContent = "Eliminar";
+                        actions.append(editButton, movementButton, deleteButton);
+                        actionsCell.append(actions);
+                        [productCell, categoryCell, priceCell, stockCell, expiryCell, statusCell, actionsCell].forEach((cell, index) => {
+                            cell.dataset.label = ["Producto", "Categoría", "Precio", "Existencias", "Caducidad", "Estado", "Acciones"][index];
+                        });
+                        row.append(productCell, categoryCell, priceCell, stockCell, expiryCell, statusCell, actionsCell);
+                        list.append(row);
+                    });
+                }
+
+                document.getElementById("total-products").textContent = String(products.length);
+                document.getElementById("total-units").textContent = formatQuantity(products.reduce((sum, product) => sum + product.stock, 0));
+                document.getElementById("stock-value").textContent = formatPrice(products.reduce((sum, product) => sum + product.stock * product.cost, 0));
+                document.getElementById("attention-count").textContent = String(products.filter(product => ["low", "out", "expired", "expiring"].includes(getStatus(product))).length);
+                document.getElementById("nav-count").textContent = String(products.length);
+                document.getElementById("visible-count").textContent = `(${filtered.length})`;
+                document.getElementById("footer-count").textContent = `Mostrando ${filtered.length} de ${products.length} productos`;
+                renderMovements();
+                renderSalesSummary();
+                renderTransactions();
+            }
+
+            function renderMovements() {
+                const movementList = document.getElementById("movement-list");
+                const movements = [...(storeMovements[activeStore] || [])].sort((a, b) => b.date.localeCompare(a.date));
+                movementList.replaceChildren();
+                if (movements.length === 0) {
+                    const row = document.createElement("tr");
+                    const cell = document.createElement("td");
+                    cell.colSpan = 5;
+                    cell.className = "empty-state";
+                    cell.textContent = "Todavía no hay entradas ni salidas registradas.";
+                    row.append(cell);
+                    movementList.append(row);
+                } else {
+                    movements.slice(0, 20).forEach(movement => {
+                        const row = document.createElement("tr");
+                        const dateCell = document.createElement("td");
+                        dateCell.textContent = new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short" }).format(new Date(movement.date));
+                        const productCell = document.createElement("td");
+                        productCell.textContent = movement.name;
+                        if (movement.note) {
+                            const note = document.createElement("div");
+                            note.className = "product-sku";
+                            note.textContent = movement.note;
+                            productCell.append(note);
+                        }
+                        const typeCell = document.createElement("td");
+                        typeCell.className = `movement-type ${movement.type}`;
+                        typeCell.textContent = movement.type === "entry" ? "Entrada" : "Salida / merma";
+                        const quantityCell = document.createElement("td");
+                        quantityCell.textContent = `${movement.type === "entry" ? "+" : "−"}${formatQuantity(movement.quantity)} ${movement.unit}`;
+                        const stockCell = document.createElement("td");
+                        stockCell.textContent = `${formatQuantity(movement.stockAfter)} ${movement.unit}`;
+                        row.append(dateCell, productCell, typeCell, quantityCell, stockCell);
+                        movementList.append(row);
+                    });
+                }
+                document.getElementById("movement-count").textContent = movements.length
+                    ? `Últimos ${Math.min(movements.length, 20)} de ${movements.length} movimientos`
+                    : "Sin movimientos";
+            }
+
+            function renderSalesSummary() {
+                const start = new Date();
+                start.setHours(0, 0, 0, 0);
+                start.setDate(start.getDate() - 6);
+                const sales = (storeTransactions[activeStore] || []).filter(item =>
+                    item.type === "sale" && new Date(item.date) >= start
+                );
+                const total = sales.reduce((sum, item) => sum + item.total, 0);
+                document.getElementById("weekly-sales").textContent = formatPrice(total);
+                document.getElementById("weekly-count").textContent = `${sales.length} ${sales.length === 1 ? "venta registrada" : "ventas registradas"}`;
+
+                const byCategory = new Map();
+                sales.forEach(item => byCategory.set(item.category, (byCategory.get(item.category) || 0) + item.total));
+                const categories = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
+                const categoryList = document.getElementById("category-sales");
+                categoryList.replaceChildren();
+                if (categories.length === 0) {
+                    const empty = document.createElement("div");
+                    empty.className = "category-empty";
+                    empty.textContent = "Aún no hay ventas esta semana.";
+                    categoryList.append(empty);
+                    return;
+                }
+                const maxTotal = categories[0][1];
+                categories.slice(0, 5).forEach(([category, amount]) => {
+                    const row = document.createElement("div");
+                    row.className = "category-row";
+                    const name = document.createElement("span");
+                    name.className = "category-row-name";
+                    name.textContent = category;
+                    const bar = document.createElement("span");
+                    bar.className = "category-bar";
+                    const fill = document.createElement("span");
+                    fill.className = "category-bar-fill";
+                    fill.style.display = "block";
+                    fill.style.width = `${Math.max(amount / maxTotal * 100, 2)}%`;
+                    bar.append(fill);
+                    const value = document.createElement("strong");
+                    value.className = "category-row-total";
+                    value.textContent = formatPrice(amount);
+                    row.append(name, bar, value);
+                    categoryList.append(row);
+                });
+            }
+
+            function renderTransactions() {
+                const transactions = [...(storeTransactions[activeStore] || [])].sort((a, b) => b.date.localeCompare(a.date));
+                const sales = transactions.filter(transaction => transaction.type === "sale");
+                const transactionList = document.getElementById("sale-transaction-list");
+                transactionList.replaceChildren();
+                if (sales.length === 0) {
+                    const row = document.createElement("tr");
+                    const cell = document.createElement("td");
+                    cell.colSpan = 6;
+                    cell.className = "empty-state";
+                    cell.textContent = "Todavía no hay facturas de venta.";
+                    row.append(cell);
+                    transactionList.append(row);
+                } else {
+                    sales.slice(0, 50).forEach(transaction => {
+                        const row = document.createElement("tr");
+                        const dateCell = document.createElement("td");
+                        dateCell.textContent = new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short" }).format(new Date(transaction.date));
+                        const invoiceCell = document.createElement("td");
+                        invoiceCell.textContent = transaction.invoice;
+                        const contactCell = document.createElement("td");
+                        contactCell.textContent = transaction.customerName || "Venta de mostrador";
+                        const productCell = document.createElement("td");
+                        productCell.textContent = transaction.productName;
+                        const totalCell = document.createElement("td");
+                        totalCell.className = "price";
+                        totalCell.textContent = formatPrice(transaction.total);
+                        const actionCell = document.createElement("td");
+                        const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "invoice-link";
+                        button.dataset.transactionId = transaction.id;
+                        button.textContent = "Ver factura";
+                        actionCell.append(button);
+                        row.append(dateCell, invoiceCell, contactCell, productCell, totalCell, actionCell);
+                        transactionList.append(row);
+                    });
+                }
+                document.getElementById("sale-invoice-count").textContent = sales.length
+                    ? `Últimas ${Math.min(sales.length, 50)} de ${sales.length} facturas`
+                    : "Sin facturas";
+            }
+
+            function openInvoice(transaction) {
+                document.getElementById("invoice-detail-title").textContent = transaction.type === "purchase" ? "Factura de compra" : "Comprobante de venta";
+                document.getElementById("invoice-detail-subtitle").textContent = transaction.invoice;
+                const paper = document.getElementById("invoice-detail");
+                paper.replaceChildren();
+                const heading = document.createElement("h3");
+                heading.textContent = transaction.storeName || storeDisplayNames[activeStore] || activeStore;
+                const addLine = (label, value, className = "") => {
+                    const line = document.createElement("p");
+                    line.className = className;
+                    line.textContent = `${label}: ${value}`;
+                    paper.append(line);
+                };
+                const date = new Intl.DateTimeFormat("es-GT", { dateStyle: "full", timeStyle: "short" }).format(new Date(transaction.date));
+                paper.append(heading);
+                addLine("Factura", transaction.invoice);
+                addLine("Fecha y hora", date);
+                if (transaction.type === "purchase") {
+                    addLine("Proveedor", transaction.supplier || "No especificado");
+                    if (transaction.paymentMethod) addLine("Forma de pago", transaction.paymentMethod === "credit" ? "Fiado" : "En efectivo");
+                } else {
+                    addLine("Cliente", transaction.customerName || "Venta de mostrador");
+                }
+                addLine("Producto", transaction.productName);
+                addLine("Categoría", transaction.category);
+                addLine("Cantidad", `${formatQuantity(transaction.quantity)} ${transaction.unit}`);
+                addLine("Precio por unidad", formatPrice(transaction.unitPrice));
+                if (transaction.note) addLine("Nota", transaction.note);
+                addLine("Total", formatPrice(transaction.total), "invoice-total");
+                document.getElementById("invoice-dialog").showModal();
+            }
+
+            function showToast(message) {
+                toast.textContent = message;
+                toast.classList.add("show");
+                window.clearTimeout(toastTimer);
+                toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2800);
+            }
+
+            function requestClear(action) {
+                pendingClearAction = action;
+                document.getElementById("clear-confirm-message").textContent = action === "sales"
+                    ? "¿Quieres confirmar limpiar todas las facturas de venta de esta tienda? También se quitarán sus salidas del historial, sin cambiar las existencias."
+                    : "¿Quieres confirmar limpiar todos los movimientos de inventario de esta tienda? No se cambiarán las existencias ni las facturas.";
+                clearConfirmDialog.showModal();
+            }
+
+            function clearSelectedHistory() {
+                const action = pendingClearAction;
+                pendingClearAction = null;
+                clearConfirmDialog.close();
+                if (!action) return;
+
+                if (action === "sales") {
+                    const sales = storeTransactions[activeStore] || [];
+                    const saleInvoices = new Set(sales.filter(item => item.type === "sale").map(item => item.invoice));
+                    const nextTransactions = { ...storeTransactions, [activeStore]: sales.filter(item => item.type !== "sale") };
+                    const movements = storeMovements[activeStore] || [];
+                    const nextMovements = {
+                        ...storeMovements,
+                        [activeStore]: movements.filter(movement =>
+                            !(movement.type === "exit" && saleInvoices.has(String(movement.note || "").replace(/^Venta\s+/i, "")))
+                        )
+                    };
+                    try {
+                        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(nextTransactions));
+                        localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(nextMovements));
+                    } catch (error) {
+                        console.error("No se pudieron limpiar las facturas de venta:", error);
+                        showToast("No se pudieron limpiar las facturas. Inténtalo de nuevo.");
+                        return;
+                    }
+                    storeTransactions = nextTransactions;
+                    storeMovements = nextMovements;
+                    render();
+                    showToast("Facturas de venta y sus salidas eliminadas. Las existencias no cambiaron.");
+                    return;
+                }
+
+                const nextMovements = { ...storeMovements, [activeStore]: [] };
+                try {
+                    localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(nextMovements));
+                } catch (error) {
+                    console.error("No se pudieron limpiar los movimientos de inventario:", error);
+                    showToast("No se pudieron limpiar los movimientos. Inténtalo de nuevo.");
+                    return;
+                }
+                storeMovements = nextMovements;
+                render();
+                showToast("Movimientos de inventario eliminados. Las existencias no cambiaron.");
+            }
+
+            function openDialog(product) {
+                editingId = product ? product.id : null;
+                form.reset();
+                document.getElementById("dialog-title").textContent = product ? "Editar producto" : "Agregar producto";
+                form.elements.name.value = product ? product.name : "";
+                form.elements.category.value = product ? product.category : "";
+                form.elements.cost.value = product ? product.cost : "0";
+                form.elements.price.value = product ? product.price : "";
+                form.elements.stock.value = product ? product.stock : "";
+                form.elements.minStock.value = product ? product.minStock : 5;
+                form.elements.unit.value = product ? product.unit : "pza";
+                form.elements.expirationDate.value = product ? product.expirationDate : "";
+                form.elements.supplier.value = product ? product.supplier : "";
+                dialog.showModal();
+                document.getElementById("product-name-input").focus();
+            }
+
+            function openMovementDialog(productId, movementType = "entry") {
+                if (products.length === 0) {
+                    showToast("Agrega un producto antes de registrar movimientos.");
+                    return;
+                }
+                const productSelect = document.getElementById("movement-product");
+                productSelect.replaceChildren(...products.map(product => {
+                    const option = document.createElement("option");
+                    option.value = product.id;
+                    option.textContent = `${product.name} (${formatQuantity(product.stock)} ${product.unit})`;
+                    return option;
+                }));
+                if (productId) productSelect.value = productId;
+                movementForm.reset();
+                document.getElementById("movement-type").value = movementType;
+                if (productId) productSelect.value = productId;
+                updateMovementInvoiceFields();
+                movementDialog.showModal();
+                productSelect.focus();
+            }
+
+            function updateMovementInvoiceFields() {
+                const isExit = document.getElementById("movement-type").value === "exit";
+                document.getElementById("movement-customer-field").hidden = !isExit;
+                document.getElementById("movement-price-field").hidden = !isExit;
+                document.getElementById("movement-invoice-button").hidden = !isExit;
+                const product = products.find(item => item.id === document.getElementById("movement-product").value);
+                document.getElementById("movement-price").value = product ? product.price : "";
+            }
+
+            function populateTransactionProducts(select, inStockOnly) {
+                const available = inStockOnly ? products.filter(product => product.stock > 0) : products;
+                select.replaceChildren(...available.map(product => {
+                    const option = document.createElement("option");
+                    option.value = product.id;
+                    option.textContent = `${product.name} (${formatQuantity(product.stock)} ${product.unit})`;
+                    return option;
+                }));
+                return available.length > 0;
+            }
+
+            function openPurchaseDialog() {
+                if (!populateTransactionProducts(document.getElementById("purchase-product"), false)) {
+                    showToast("Agrega un producto antes de registrar una compra.");
+                    return;
+                }
+                const purchaseForm = document.getElementById("purchase-form");
+                purchaseForm.reset();
+                const selected = products.find(product => product.id === purchaseForm.elements.productId.value);
+                purchaseForm.elements.unitPrice.value = selected ? selected.price : "0";
+                if (selected) {
+                    purchaseForm.elements.supplier.value = selected.supplier;
+                }
+                document.getElementById("purchase-dialog").showModal();
+            }
+
+            function openSaleDialog() {
+                if (!populateTransactionProducts(document.getElementById("sale-product"), true)) {
+                    showToast("No hay productos con existencias para vender.");
+                    return;
+                }
+                const saleForm = document.getElementById("sale-form");
+                saleForm.reset();
+                const selected = products.find(product => product.id === saleForm.elements.productId.value);
+                if (selected) saleForm.elements.unitPrice.value = selected.price;
+                document.getElementById("sale-dialog").showModal();
+            }
+
+            function generateInvoiceNumber() {
+                const date = new Date();
+                const dateCode = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+                return `VENT-${dateCode}-${Date.now().toString().slice(-5)}`;
+            }
+
+            function saveTransaction(type, transactionForm) {
+                const data = new FormData(transactionForm);
+                const product = products.find(item => item.id === String(data.get("productId")));
+                const quantity = Number(data.get("quantity"));
+                const unitPrice = Number(data.get("unitPrice"));
+                if (!product || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) {
+                    showToast("Revisa el producto, la cantidad y el precio.");
+                    return;
+                }
+                if (type === "sale" && quantity > product.stock) {
+                    transactionForm.elements.quantity.setCustomValidity("La venta no puede superar las existencias actuales.");
+                    transactionForm.elements.quantity.reportValidity();
+                    transactionForm.elements.quantity.addEventListener("input", () => transactionForm.elements.quantity.setCustomValidity(""), { once: true });
+                    return;
+                }
+                let invoice = "";
+                if (type === "sale") {
+                    invoice = generateInvoiceNumber();
+                    if ((storeTransactions[activeStore] || []).some(item => item.invoice.toLocaleLowerCase("es") === invoice.toLocaleLowerCase("es"))) {
+                        showToast("Ya existe una factura con ese número. Intenta de nuevo.");
+                        return;
+                    }
+                }
+                const supplier = type === "purchase" ? String(data.get("supplier")).trim() : "";
+                const paymentMethod = type === "purchase" ? String(data.get("paymentMethod") || "cash") : "";
+                const customerName = type === "sale" ? String(data.get("customerName") || "").trim() : "";
+                const note = String(data.get("note") || "").trim();
+                const stockBefore = product.stock;
+                if (type === "purchase") {
+                    product.stock = Number((stockBefore + quantity).toFixed(3));
+                    if (product.stock > 0) {
+                        product.cost = Number(((stockBefore * product.cost + quantity * unitPrice) / product.stock).toFixed(2));
+                    }
+                } else {
+                    product.stock = Number((stockBefore - quantity).toFixed(3));
+                }
+                const date = new Date().toISOString();
+                let transaction;
+                if (type === "sale") {
+                    transaction = {
+                        id: `t-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        invoice,
+                        type,
+                        productId: product.id,
+                        productName: product.name,
+                        category: product.category,
+                        quantity,
+                        unit: product.unit,
+                        unitPrice,
+                        total: Number((quantity * unitPrice).toFixed(2)),
+                        supplier,
+                        paymentMethod,
+                        customerName,
+                        storeName: storeDisplayNames[activeStore] || activeStore,
+                        note,
+                        date
+                    };
+                    storeTransactions[activeStore].unshift(transaction);
+                }
+                storeMovements[activeStore].unshift({
+                    id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    productId: product.id,
+                    name: product.name,
+                    type: type === "purchase" ? "entry" : "exit",
+                    quantity,
+                    unit: product.unit,
+                    stockAfter: product.stock,
+                    note: type === "purchase"
+                        ? `Compra en efectivo${supplier ? ` · ${supplier}` : ""}${note ? ` · ${note}` : ""}`
+                        : `Venta ${invoice}`,
+                    date
+                });
+                persist();
+                render();
+                document.getElementById(type === "purchase" ? "purchase-dialog" : "sale-dialog").close();
+                if (type === "sale") {
+                    showToast("Venta registrada y factura generada.");
+                    openInvoice(transaction);
+                } else {
+                    showToast("Compra registrada y existencias actualizadas.");
+                }
+            }
+
+            document.getElementById("add-product").addEventListener("click", () => openDialog(null));
+            document.getElementById("close-dialog").addEventListener("click", () => dialog.close());
+            document.getElementById("cancel-dialog").addEventListener("click", () => dialog.close());
+            document.getElementById("register-movement").addEventListener("click", () => openMovementDialog());
+            document.getElementById("register-exit").addEventListener("click", openSaleDialog);
+            document.getElementById("close-movement-dialog").addEventListener("click", () => movementDialog.close());
+            document.getElementById("cancel-movement-dialog").addEventListener("click", () => movementDialog.close());
+            document.getElementById("register-purchase").addEventListener("click", openPurchaseDialog);
+            document.getElementById("register-sale").addEventListener("click", openSaleDialog);
+            document.getElementById("edit-store-name").addEventListener("click", () => {
+                document.getElementById("store-name-input").value = storeDisplayNames[activeStore] || activeStore;
+                document.getElementById("store-name-dialog").showModal();
+                document.getElementById("store-name-input").focus();
+            });
+            document.getElementById("manage-accounts").addEventListener("click", () => {
+                renderAccounts();
+                accountsDialog.showModal();
+            });
+            document.getElementById("active-account-select").addEventListener("change", event => {
+                const nextAccountId = event.target.value;
+                if (!localAccounts.some(account => account.id === nextAccountId)) return;
+                try {
+                    localStorage.setItem(ACTIVE_ACCOUNT_KEY, nextAccountId);
+                } catch (error) {
+                    console.error("No se pudo guardar el perfil activo:", error);
+                    event.target.value = activeAccountId;
+                    showToast("No se pudo cambiar el perfil activo.");
+                    return;
+                }
+                activeAccountId = nextAccountId;
+                renderAccounts();
+            });
+            document.getElementById("close-accounts-dialog").addEventListener("click", () => accountsDialog.close());
+            document.getElementById("cancel-accounts-dialog").addEventListener("click", () => accountsDialog.close());
+            document.getElementById("account-form").addEventListener("submit", event => {
+                event.preventDefault();
+                if (activeAccountId !== PRIMARY_ACCOUNT.id) {
+                    showToast("Solo la cuenta principal puede agregar cuentas.");
+                    return;
+                }
+                if (!event.currentTarget.reportValidity()) return;
+                const data = new FormData(event.currentTarget);
+                const name = String(data.get("name")).trim();
+                const role = String(data.get("role"));
+                if (!name || !["Administradora", "Empleado"].includes(role)) return;
+                if (localAccounts.some(account => account.name.toLocaleLowerCase("es") === name.toLocaleLowerCase("es"))) {
+                    document.getElementById("account-name-input").setCustomValidity("Ya existe una cuenta con ese nombre.");
+                    document.getElementById("account-name-input").reportValidity();
+                    document.getElementById("account-name-input").addEventListener("input", () => {
+                        document.getElementById("account-name-input").setCustomValidity("");
+                    }, { once: true });
+                    return;
+                }
+                const nextAccounts = [...localAccounts, {
+                    id: `account-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    name,
+                    role,
+                    protected: false
+                }];
+                try {
+                    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(nextAccounts));
+                } catch (error) {
+                    console.error("No se pudo guardar la cuenta local:", error);
+                    showToast("No se pudo guardar la cuenta en este dispositivo.");
+                    return;
+                }
+                localAccounts = nextAccounts;
+                event.currentTarget.reset();
+                renderAccounts();
+                showToast(`Cuenta local "${name}" agregada.`);
+            });
+            document.getElementById("account-list").addEventListener("click", event => {
+                const permissionButton = event.target.closest("button[data-permission-account-id]");
+                if (permissionButton) {
+                    if (activeAccountId !== PRIMARY_ACCOUNT.id) return;
+                    const target = localAccounts.find(item => item.id === permissionButton.dataset.permissionAccountId);
+                    if (!target || target.protected) return;
+                    const grant = !target.canDeleteAccounts;
+                    const nextAccounts = localAccounts.map(account => ({
+                        ...account,
+                        canDeleteAccounts: account.protected || (grant && account.id === target.id)
+                    }));
+                    try {
+                        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(nextAccounts));
+                    } catch (error) {
+                        console.error("No se pudo actualizar el permiso para eliminar usuarios:", error);
+                        showToast("No se pudo actualizar el permiso. Inténtalo de nuevo.");
+                        return;
+                    }
+                    localAccounts = nextAccounts;
+                    renderAccounts();
+                    showToast(grant
+                        ? `Permiso para eliminar usuarios otorgado a "${target.name}".`
+                        : `Permiso para eliminar usuarios retirado a "${target.name}".`);
+                    return;
+                }
+                const button = event.target.closest("button[data-account-id]");
+                if (!button) return;
+                const account = localAccounts.find(item => item.id === button.dataset.accountId);
+                const activeAccount = localAccounts.find(item => item.id === activeAccountId);
+                if (!account || !activeAccount?.canDeleteAccounts || account.protected || account.id === activeAccount.id) return;
+                pendingAccountDeleteId = account.id;
+                document.getElementById("delete-account-message").textContent =
+                    `¿Quieres eliminar la cuenta "${account.name}"? Esta acción no se puede deshacer.`;
+                accountsDialog.close();
+                deleteAccountDialog.showModal();
+            });
+            document.getElementById("close-delete-account-dialog").addEventListener("click", () => closeDeleteAccountConfirmation(true));
+            document.getElementById("cancel-delete-account").addEventListener("click", () => closeDeleteAccountConfirmation(true));
+            document.getElementById("confirm-delete-account").addEventListener("click", () => {
+                const account = localAccounts.find(item => item.id === pendingAccountDeleteId);
+                const activeAccount = localAccounts.find(item => item.id === activeAccountId);
+                if (!account || !activeAccount?.canDeleteAccounts || account.protected || account.id === activeAccount.id) {
+                    closeDeleteAccountConfirmation(true);
+                    return;
+                }
+                const nextAccounts = localAccounts.filter(item => item.id !== account.id);
+                try {
+                    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(nextAccounts));
+                } catch (error) {
+                    console.error("No se pudo eliminar la cuenta local:", error);
+                    closeDeleteAccountConfirmation(true);
+                    showToast("No se pudo eliminar la cuenta. Inténtalo de nuevo.");
+                    return;
+                }
+                localAccounts = nextAccounts;
+                pendingAccountDeleteId = null;
+                deleteAccountDialog.close();
+                renderAccounts();
+                accountsDialog.showModal();
+                showToast(`Cuenta "${account.name}" eliminada.`);
+            });
+            document.getElementById("new-store-type").addEventListener("change", event => {
+                const customField = document.getElementById("new-store-custom-type-field");
+                const customInput = document.getElementById("new-store-custom-type");
+                customField.hidden = event.target.value !== "otro";
+                customInput.required = event.target.value === "otro";
+                if (!customInput.required) customInput.value = "";
+            });
+            document.getElementById("edit-store-type").addEventListener("click", () => {
+                const type = storeTypes[activeStore] || "consumo";
+                const knownType = type === "consumo" || type === "ropa";
+                const typeSelect = document.getElementById("store-type-select");
+                const customField = document.getElementById("store-custom-type-field");
+                const customInput = document.getElementById("store-custom-type");
+                typeSelect.value = knownType ? type : "otro";
+                customInput.value = knownType ? "" : type;
+                customField.hidden = knownType;
+                customInput.required = !knownType;
+                document.getElementById("store-type-dialog").showModal();
+            });
+            document.getElementById("store-type-select").addEventListener("change", event => {
+                const customField = document.getElementById("store-custom-type-field");
+                const customInput = document.getElementById("store-custom-type");
+                customField.hidden = event.target.value !== "otro";
+                customInput.required = event.target.value === "otro";
+                if (!customInput.required) customInput.value = "";
+            });
+            document.getElementById("close-store-type-dialog").addEventListener("click", () => document.getElementById("store-type-dialog").close());
+            document.getElementById("cancel-store-type-dialog").addEventListener("click", () => document.getElementById("store-type-dialog").close());
+            document.getElementById("store-type-form").addEventListener("submit", event => {
+                event.preventDefault();
+                if (!event.currentTarget.reportValidity()) return;
+                const data = new FormData(event.currentTarget);
+                const type = String(data.get("type")) === "otro"
+                    ? String(data.get("customType")).trim()
+                    : String(data.get("type"));
+                if (!type) return;
+                const nextStoreTypes = { ...storeTypes, [activeStore]: type };
+                try {
+                    localStorage.setItem(STORE_TYPES_KEY, JSON.stringify(nextStoreTypes));
+                } catch (error) {
+                    console.error("No se pudo guardar el tipo de tienda:", error);
+                    showToast("No se pudo guardar el tipo de tienda.");
+                    return;
+                }
+                storeTypes = nextStoreTypes;
+                render();
+                document.getElementById("store-type-dialog").close();
+                showToast("Tipo de tienda actualizado.");
+            });
+            document.getElementById("close-add-store-dialog").addEventListener("click", () => document.getElementById("add-store-dialog").close());
+            document.getElementById("cancel-add-store-dialog").addEventListener("click", () => document.getElementById("add-store-dialog").close());
+            document.getElementById("add-store-form").addEventListener("submit", event => {
+                event.preventDefault();
+                if (!event.currentTarget.reportValidity()) return;
+                const data = new FormData(event.currentTarget);
+                const name = String(data.get("name")).trim();
+                const type = String(data.get("type")) === "otro"
+                    ? String(data.get("customType")).trim()
+                    : String(data.get("type"));
+                if (!name || !type) return;
+                const duplicate = storeNames.some(store => (storeDisplayNames[store] || store).toLocaleLowerCase("es") === name.toLocaleLowerCase("es"));
+                if (duplicate) {
+                    document.getElementById("new-store-name").setCustomValidity("Ya existe una tienda con ese nombre.");
+                    document.getElementById("new-store-name").reportValidity();
+                    document.getElementById("new-store-name").addEventListener("input", () => document.getElementById("new-store-name").setCustomValidity(""), { once: true });
+                    return;
+                }
+                const storeId = `store-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                const nextStoreNames = [...storeNames, storeId];
+                const nextDisplayNames = { ...storeDisplayNames, [storeId]: name };
+                const nextInventories = { ...storeInventories, [storeId]: [] };
+                const nextMovements = { ...storeMovements, [storeId]: [] };
+                const nextTransactions = { ...storeTransactions, [storeId]: [] };
+                const nextStoreTypes = { ...storeTypes, [storeId]: type };
+                try {
+                    localStorage.setItem(STORES_KEY, JSON.stringify(nextStoreNames));
+                    localStorage.setItem(STORE_NAMES_KEY, JSON.stringify(nextDisplayNames));
+                    localStorage.setItem(STORE_TYPES_KEY, JSON.stringify(nextStoreTypes));
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextInventories));
+                    localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(nextMovements));
+                    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(nextTransactions));
+                    localStorage.setItem(ACTIVE_STORE_KEY, storeId);
+                } catch (error) {
+                    console.error("No se pudo guardar la nueva tienda:", error);
+                    showToast("No se pudo guardar la tienda en este navegador.");
+                    return;
+                }
+                storeNames.push(storeId);
+                storeDisplayNames = nextDisplayNames;
+                storeInventories = nextInventories;
+                storeMovements = nextMovements;
+                storeTransactions = nextTransactions;
+                storeTypes = nextStoreTypes;
+                storeSelect.add(new Option(name, storeId));
+                activeStore = storeId;
+                storeSelect.value = storeId;
+                products = storeInventories[storeId];
+                render();
+                document.getElementById("add-store-dialog").close();
+                showToast(`Tienda "${name}" creada.`);
+            });
+            document.getElementById("close-store-name-dialog").addEventListener("click", () => document.getElementById("store-name-dialog").close());
+            document.getElementById("cancel-store-name-dialog").addEventListener("click", () => document.getElementById("store-name-dialog").close());
+            document.getElementById("store-name-form").addEventListener("submit", event => {
+                event.preventDefault();
+                if (!event.currentTarget.reportValidity()) return;
+                const name = String(new FormData(event.currentTarget).get("storeName")).trim();
+                if (!name) return;
+                storeDisplayNames[activeStore] = name;
+                try {
+                    localStorage.setItem(STORE_NAMES_KEY, JSON.stringify(storeDisplayNames));
+                } catch (error) {
+                    console.error("No se pudo guardar el nombre de la tienda:", error);
+                    showToast("No se pudo guardar el nombre de la tienda en este navegador.");
+                    return;
+                }
+                const selectedOption = [...storeSelect.options].find(option => option.value === activeStore);
+                if (selectedOption) selectedOption.textContent = name;
+                render();
+                document.getElementById("store-name-dialog").close();
+                showToast("Nombre de tienda actualizado.");
+            });
+            document.getElementById("close-purchase-dialog").addEventListener("click", () => document.getElementById("purchase-dialog").close());
+            document.getElementById("cancel-purchase-dialog").addEventListener("click", () => document.getElementById("purchase-dialog").close());
+            document.getElementById("close-sale-dialog").addEventListener("click", () => document.getElementById("sale-dialog").close());
+            document.getElementById("cancel-sale-dialog").addEventListener("click", () => document.getElementById("sale-dialog").close());
+            document.getElementById("close-invoice-dialog").addEventListener("click", () => document.getElementById("invoice-dialog").close());
+            document.getElementById("cancel-invoice-dialog").addEventListener("click", () => document.getElementById("invoice-dialog").close());
+            document.getElementById("print-invoice").addEventListener("click", () => window.print());
+            document.getElementById("clear-sales").addEventListener("click", () => requestClear("sales"));
+            document.getElementById("clear-movements").addEventListener("click", () => requestClear("movements"));
+            document.getElementById("cancel-clear").addEventListener("click", () => {
+                pendingClearAction = null;
+                clearConfirmDialog.close();
+            });
+            document.getElementById("close-clear-confirm-dialog").addEventListener("click", () => {
+                pendingClearAction = null;
+                clearConfirmDialog.close();
+            });
+            document.getElementById("confirm-clear").addEventListener("click", clearSelectedHistory);
+            document.getElementById("install-app").addEventListener("click", async () => {
+                if (!deferredInstallPrompt) {
+                    const help = document.getElementById("install-help");
+                    help.replaceChildren();
+                    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+                    const isAndroid = /android/i.test(navigator.userAgent);
+                    const isWindows = /windows/i.test(navigator.userAgent);
+                    const isLocalFile = location.protocol === "file:";
+                    const guidance = [];
+                    if (isLocalFile) {
+                        guidance.push("Ahora abriste esta página como archivo de tu computadora. Para instalarla en un teléfono o computadora, primero debe publicarse en una dirección segura que empiece con https://.");
+                    } else if (isIOS) {
+                        guidance.push("En Safari, toca Compartir y elige «Agregar a pantalla de inicio».");
+                    } else if (isAndroid) {
+                        guidance.push("En Chrome, toca el menú ⋮ y elige «Instalar aplicación» o «Agregar a pantalla principal».");
+                    } else if (isWindows) {
+                        guidance.push("En Microsoft Edge o Chrome, abre el menú del navegador y selecciona «Instalar Tienda Jiménez» o «Instalar esta aplicación».");
+                    } else {
+                        guidance.push("Abre el menú de tu navegador y busca «Instalar aplicación» o «Agregar a pantalla principal».");
+                    }
+                    guidance.push("La aplicación guardará los datos en este dispositivo y podrá abrirse sin conexión después de cargarla una vez. Los datos no se sincronizan automáticamente entre dispositivos.");
+                    guidance.forEach(text => {
+                        const paragraph = document.createElement("p");
+                        paragraph.textContent = text;
+                        help.append(paragraph);
+                    });
+                    installDialog.showModal();
+                    return;
+                }
+                try {
+                    await deferredInstallPrompt.prompt();
+                    const choice = await deferredInstallPrompt.userChoice;
+                    deferredInstallPrompt = null;
+                    if (choice.outcome === "accepted") showToast("Instalación iniciada.");
+                } catch (error) {
+                    console.error("No se pudo iniciar la instalación:", error);
+                    showToast("No se pudo iniciar la instalación. Revisa el menú del navegador.");
+                }
+            });
+            document.getElementById("close-install-dialog").addEventListener("click", () => installDialog.close());
+            document.getElementById("dismiss-install-dialog").addEventListener("click", () => installDialog.close());
+            window.addEventListener("beforeinstallprompt", event => {
+                event.preventDefault();
+                deferredInstallPrompt = event;
+            });
+            window.addEventListener("appinstalled", () => {
+                deferredInstallPrompt = null;
+                document.getElementById("install-app").hidden = true;
+                showToast("Tienda Jiménez quedó instalada.");
+            });
+            document.getElementById("purchase-product").addEventListener("change", event => {
+                const product = products.find(item => item.id === event.target.value);
+                if (!product) return;
+                document.getElementById("purchase-cost").value = product.price;
+                if (!document.getElementById("purchase-supplier").value) document.getElementById("purchase-supplier").value = product.supplier;
+            });
+            document.getElementById("sale-product").addEventListener("change", event => {
+                const product = products.find(item => item.id === event.target.value);
+                if (product) document.getElementById("sale-price").value = product.price;
+            });
+            document.getElementById("movement-type").addEventListener("change", updateMovementInvoiceFields);
+            document.getElementById("movement-product").addEventListener("change", updateMovementInvoiceFields);
+            search.addEventListener("input", render);
+            categoryFilter.addEventListener("change", render);
+            stockFilter.addEventListener("change", render);
+            document.getElementById("purchase-form").addEventListener("submit", event => {
+                event.preventDefault();
+                if (event.currentTarget.reportValidity()) saveTransaction("purchase", event.currentTarget);
+            });
+            document.getElementById("sale-form").addEventListener("submit", event => {
+                event.preventDefault();
+                if (event.currentTarget.reportValidity()) saveTransaction("sale", event.currentTarget);
+            });
+            document.getElementById("facturas").addEventListener("click", event => {
+                const button = event.target.closest("button[data-transaction-id]");
+                if (!button) return;
+                const transaction = (storeTransactions[activeStore] || []).find(item => item.id === button.dataset.transactionId);
+                if (transaction) openInvoice(transaction);
+            });
+
+            form.addEventListener("submit", event => {
+                event.preventDefault();
+                if (!form.reportValidity()) return;
+                const data = new FormData(form);
+                const existing = editingId ? products.find(item => item.id === editingId) : null;
+                const id = editingId || `p-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                const product = {
+                    id,
+                    name: String(data.get("name")).trim(),
+                    sku: existing?.sku || id,
+                    category: String(data.get("category")).trim(),
+                    cost: Number(data.get("cost")),
+                    price: Number(data.get("price")),
+                    stock: Number(data.get("stock")),
+                    minStock: Number(data.get("minStock")),
+                    unit: String(data.get("unit")),
+                    expirationDate: String(data.get("expirationDate")),
+                    supplier: String(data.get("supplier")).trim(),
+                    emoji: editingId ? products.find(item => item.id === editingId)?.emoji || "📦" : "📦"
+                };
+                if (editingId) {
+                    products = products.map(item => item.id === editingId ? product : item);
+                } else {
+                    products.unshift(product);
+                }
+                persist();
+                render();
+                dialog.close();
+                showToast(editingId ? "Producto actualizado." : "Producto agregado.");
+            });
+
+            movementForm.addEventListener("submit", event => {
+                event.preventDefault();
+                if (!movementForm.reportValidity()) return;
+                const data = new FormData(movementForm);
+                const product = products.find(item => item.id === String(data.get("productId")));
+                const quantity = Number(data.get("quantity"));
+                const type = String(data.get("type"));
+                const generateInvoice = event.submitter?.value === "invoice";
+                const unitPrice = Number(data.get("unitPrice"));
+                if (!product || !Number.isFinite(quantity) || quantity <= 0) return;
+                if (type === "exit" && quantity > product.stock) {
+                    movementForm.elements.quantity.setCustomValidity("La salida no puede superar las existencias actuales.");
+                    movementForm.elements.quantity.reportValidity();
+                    movementForm.elements.quantity.addEventListener("input", () => movementForm.elements.quantity.setCustomValidity(""), { once: true });
+                    return;
+                }
+                if (generateInvoice && (!Number.isFinite(unitPrice) || unitPrice < 0)) {
+                    movementForm.elements.unitPrice.setCustomValidity("Ingresa un precio válido para la factura.");
+                    movementForm.elements.unitPrice.reportValidity();
+                    movementForm.elements.unitPrice.addEventListener("input", () => movementForm.elements.unitPrice.setCustomValidity(""), { once: true });
+                    return;
+                }
+                product.stock = Number((product.stock + (type === "entry" ? quantity : -quantity)).toFixed(3));
+                const movementDate = new Date().toISOString();
+                const movement = {
+                    id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    productId: product.id,
+                    name: product.name,
+                    type,
+                    quantity,
+                    unit: product.unit,
+                    stockAfter: product.stock,
+                    note: String(data.get("note")).trim(),
+                    date: movementDate
+                };
+                storeMovements[activeStore].unshift(movement);
+                let invoiceTransaction;
+                if (generateInvoice) {
+                    invoiceTransaction = {
+                        id: `t-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        invoice: generateInvoiceNumber(),
+                        type: "sale",
+                        productId: product.id,
+                        productName: product.name,
+                        category: product.category,
+                        quantity,
+                        unit: product.unit,
+                        unitPrice,
+                        total: Number((quantity * unitPrice).toFixed(2)),
+                        supplier: "",
+                        customerName: String(data.get("customerName") || "").trim(),
+                        storeName: storeDisplayNames[activeStore] || activeStore,
+                        note: String(data.get("note")).trim(),
+                        date: movementDate
+                    };
+                    storeTransactions[activeStore].unshift(invoiceTransaction);
+                }
+                persist();
+                render();
+                movementDialog.close();
+                if (invoiceTransaction) {
+                    showToast("Salida registrada y factura generada.");
+                    openInvoice(invoiceTransaction);
+                } else {
+                    showToast(type === "entry" ? "Entrada de mercancía registrada." : "Salida de inventario registrada.");
+                }
+            });
+
+            list.addEventListener("click", event => {
+                const button = event.target.closest("button[data-action]");
+                if (!button) return;
+                const product = products.find(item => item.id === button.dataset.id);
+                if (!product) return;
+                if (button.dataset.action === "edit") {
+                    openDialog(product);
+                } else if (button.dataset.action === "movement") {
+                    openMovementDialog(product.id);
+                } else if (button.dataset.action === "delete") {
+                    if (!window.confirm(`¿Eliminar "${product.name}" del inventario?`)) return;
+                    products = products.filter(item => item.id !== product.id);
+                    persist();
+                    render();
+                    showToast("Producto eliminado.");
+                }
+            });
+
+            storeSelect.addEventListener("change", event => {
+                activeStore = event.target.value;
+                products = storeInventories[activeStore] || [];
+                try {
+                    localStorage.setItem(ACTIVE_STORE_KEY, activeStore);
+                } catch (error) {
+                    console.error("No se pudo guardar la tienda seleccionada:", error);
+                    showToast("No se pudo guardar la tienda seleccionada en este dispositivo.");
+                }
+                render();
+                showToast(`Inventario de ${activeStore} seleccionado.`);
+            });
+            document.getElementById("today").textContent = new Intl.DateTimeFormat("es-GT", { day: "numeric", month: "short", year: "numeric" }).format(new Date());
+            renderAccounts();
+            const localAccessDialog = document.getElementById("local-access-dialog");
+            const localAccessForm = document.getElementById("local-access-form");
+            localAccessDialog.addEventListener("cancel", event => event.preventDefault());
+            let localAccessMode = "register";
+            function configureLocalAccess() {
+                let savedCredential;
+                try {
+                    savedCredential = localStorage.getItem(LOCAL_ACCESS_KEY);
+                } catch (error) {
+                    console.error("No se pudo leer la cuenta de este dispositivo:", error);
+                    showToast("No se pudo leer la cuenta local.");
+                }
+                let credential = null;
+                try {
+                    credential = savedCredential ? JSON.parse(savedCredential) : null;
+                } catch (error) {
+                    console.error("La cuenta de este dispositivo está dañada:", error);
+                    showToast("No se pudo leer la cuenta. Puedes volver a registrarla.");
+                }
+                if (credential && typeof credential.storeId === "string" && storeNames.includes(credential.storeId)) {
+                    activeStore = credential.storeId;
+                    storeSelect.value = activeStore;
+                    products = storeInventories[activeStore] || [];
+                }
+                if (credential) {
+                    document.body.classList.remove("local-access-locked");
+                    render();
+                    return;
+                }
+                localAccessMode = savedCredential ? "login" : "register";
+                document.body.classList.add("local-access-locked");
+                const registering = localAccessMode === "register";
+                document.getElementById("local-access-title").textContent = registering
+                    ? "Registrar este dispositivo"
+                    : "Ingresar a este dispositivo";
+                document.getElementById("local-access-description").textContent = registering
+                    ? "Crea una contraseña local para proteger el acceso a tu inventario."
+                    : "Escribe la contraseña local para continuar.";
+                document.getElementById("local-store-name-field").hidden = !registering;
+                document.getElementById("local-store-name").required = registering;
+                document.getElementById("local-password-confirm-field").hidden = !registering;
+                document.getElementById("local-password-confirm").required = registering;
+                document.getElementById("local-password").autocomplete = registering ? "new-password" : "current-password";
+                document.getElementById("local-access-error").hidden = true;
+                document.getElementById("local-password").type = "password";
+                document.getElementById("local-password-confirm").type = "password";
+                document.getElementById("toggle-local-password").textContent = "Mostrar contraseña";
+                document.getElementById("toggle-local-password").setAttribute("aria-pressed", "false");
+                document.getElementById("local-access-submit").textContent = registering ? "Crear cuenta local" : "Ingresar";
+                document.getElementById("toggle-local-access-mode").hidden = true;
+                if (!localAccessDialog.open) localAccessDialog.showModal();
+                document.getElementById(registering ? "local-store-name" : "local-password").focus();
+            }
+
+            async function deriveLocalPassword(password, salt, iterations) {
+                if (!crypto.subtle) throw new Error("Este navegador no permite validar la contraseña local.");
+                const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+                const bits = await crypto.subtle.deriveBits({
+                    name: "PBKDF2",
+                    hash: "SHA-256",
+                    salt,
+                    iterations
+                }, material, 256);
+                return Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, "0")).join("");
+            }
+
+            localAccessForm.addEventListener("submit", async event => {
+                event.preventDefault();
+                if (!localAccessForm.reportValidity()) return;
+                const password = document.getElementById("local-password").value;
+                const passwordConfirm = document.getElementById("local-password-confirm").value;
+                const storeName = document.getElementById("local-store-name").value.trim();
+                const submit = document.getElementById("local-access-submit");
+                let authenticated = false;
+                submit.disabled = true;
+                document.getElementById("local-access-error").hidden = true;
+                try {
+                    if (localAccessMode === "register") {
+                        if (!storeName) {
+                            document.getElementById("local-store-name").setCustomValidity("Escribe el nombre de la tienda o local.");
+                            document.getElementById("local-store-name").reportValidity();
+                            return;
+                        }
+                        document.getElementById("local-store-name").setCustomValidity("");
+                        if (password.length < 8) {
+                            document.getElementById("local-password").setCustomValidity("Usa al menos 8 caracteres.");
+                            document.getElementById("local-password").reportValidity();
+                            return;
+                        }
+                        if (password !== passwordConfirm) {
+                            document.getElementById("local-password-confirm").setCustomValidity("Las contraseñas no coinciden.");
+                            document.getElementById("local-password-confirm").reportValidity();
+                            return;
+                        }
+                        const salt = crypto.getRandomValues(new Uint8Array(16));
+                        const iterations = 210000;
+                        const hash = await deriveLocalPassword(password, salt, iterations);
+                        const nextStoreDisplayNames = { ...storeDisplayNames, [activeStore]: storeName };
+                        const nextInventories = { ...storeInventories, [activeStore]: [] };
+                        const nextMovements = { ...storeMovements, [activeStore]: [] };
+                        const nextTransactions = { ...storeTransactions, [activeStore]: [] };
+                        const newCredential = {
+                            version: 1,
+                            salt: Array.from(salt, byte => byte.toString(16).padStart(2, "0")).join(""),
+                            hash,
+                            iterations,
+                            storeId: activeStore
+                        };
+                        localStorage.setItem(STORE_NAMES_KEY, JSON.stringify(nextStoreDisplayNames));
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextInventories));
+                        localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(nextMovements));
+                        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(nextTransactions));
+                        localStorage.setItem(ACTIVE_STORE_KEY, activeStore);
+                        localStorage.setItem(LOCAL_ACCESS_KEY, JSON.stringify(newCredential));
+                        storeDisplayNames = nextStoreDisplayNames;
+                        storeInventories = nextInventories;
+                        storeMovements = nextMovements;
+                        storeTransactions = nextTransactions;
+                        products = [];
+                        const selectedOption = [...storeSelect.options].find(option => option.value === activeStore);
+                        if (selectedOption) selectedOption.textContent = storeName;
+                        render();
+                        authenticated = true;
+                    } else {
+                        const saved = JSON.parse(localStorage.getItem(LOCAL_ACCESS_KEY) || "null");
+                        if (!saved || saved.version !== 1 || typeof saved.salt !== "string"
+                            || !/^(?:[0-9a-f]{2}){16}$/i.test(saved.salt)
+                            || typeof saved.hash !== "string" || !/^[0-9a-f]{64}$/i.test(saved.hash)
+                            || !Number.isInteger(saved.iterations) || saved.iterations < 1) {
+                            throw new Error("La cuenta local no tiene un formato válido.");
+                        }
+                        const salt = new Uint8Array(saved.salt.match(/.{2}/g).map(byte => Number.parseInt(byte, 16)));
+                        const hash = await deriveLocalPassword(password, salt, saved.iterations);
+                        if (hash !== saved.hash) {
+                            showLocalAccessError("La contraseña no es correcta.");
+                            return;
+                        }
+                        if (typeof saved.storeId === "string" && storeNames.includes(saved.storeId)) {
+                            activeStore = saved.storeId;
+                            storeSelect.value = activeStore;
+                            products = storeInventories[activeStore] || [];
+                            localStorage.setItem(ACTIVE_STORE_KEY, activeStore);
+                        }
+                        authenticated = true;
+                    }
+                } catch (error) {
+                    console.error("No se pudo validar la cuenta local:", error);
+                    showLocalAccessError("No se pudo completar el acceso local. Revisa el almacenamiento del navegador.");
+                } finally {
+                    submit.disabled = false;
+                }
+                if (!authenticated) return;
+                document.body.classList.remove("local-access-locked");
+                localAccessForm.reset();
+                localAccessDialog.close();
+            });
+            function showLocalAccessError(message) {
+                const error = document.getElementById("local-access-error");
+                error.textContent = message;
+                error.hidden = false;
+            }
+            for (const id of ["local-password", "local-password-confirm"]) {
+                document.getElementById(id).addEventListener("input", event => event.currentTarget.setCustomValidity(""));
+            }
+            document.getElementById("local-store-name").addEventListener("input", event => event.currentTarget.setCustomValidity(""));
+            document.getElementById("toggle-local-password").addEventListener("click", event => {
+                const show = event.currentTarget.getAttribute("aria-pressed") !== "true";
+                for (const id of ["local-password", "local-password-confirm"]) {
+                    document.getElementById(id).type = show ? "text" : "password";
+                }
+                event.currentTarget.setAttribute("aria-pressed", String(show));
+                event.currentTarget.textContent = show ? "Ocultar contraseña" : "Mostrar contraseña";
+            });
+            configureLocalAccess();
+            if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
+                document.getElementById("install-app").hidden = true;
+            }
+            if ("serviceWorker" in navigator && location.protocol !== "file:") {
+                navigator.serviceWorker.register("./service-worker.js").catch(error => {
+                    console.error("No se pudo activar el modo sin conexión:", error);
+                    showToast("No se pudo activar el modo sin conexión.");
+                });
+            }
+            render();
+        })();
+    </script>
+</body>
+</html>
